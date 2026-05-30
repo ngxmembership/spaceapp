@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #101625; color: white; margin: 0; padding: 20px 20px 80px 20px; /* отступ для навигации */
+            background: #101625; color: white; margin: 0; padding: 20px 20px 80px 20px;
             display: flex; flex-direction: column; align-items: center; box-sizing: border-box;
             min-height: 100vh;
         }
@@ -89,16 +89,17 @@
         .result-item b { font-weight: bold; color: #f2c94c; }
         .result-matrix-grid { display: flex; justify-content: space-between; margin-top: 15px; gap: 10px;}
         .result-matrix-item { flex: 1; background: #252b41; border-radius: 14px; padding: 15px; text-align: center;}
-        .result-matrix-item .title { font-size: 14px; color: #6e7a9e; margin-bottom: 10px; display: block;}
-        .result-matrix-item .circle { width: 50px; height: 50px; background: #1a1f2e; border: 2px solid #f2c94c; border-radius: 50%; color: #f2c94c; font-size: 26px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto;}
+        .result-matrix-item .title { font-size: 13px; color: #6e7a9e; margin-bottom: 10px; display: block;}
+        .result-matrix-item .circle { width: 50px; height: 50px; background: #1a1f2e; border: 2px solid #f2c94c; border-radius: 50%; color: #f2c94c; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto;}
 
     </style>
 </head>
 <body>
     <div class="header">
         <div class="menu-icon">☰</div>
-        <h1 id="headerDate">30 Мая</h1>
-        <div style="width: 30px;"></div> </div>
+        <h1 id="headerDate">31 Мая</h1>
+        <div style="width: 30px;"></div>
+    </div>
 
     <div class="section-title">Ввод и настройка данных</div>
 
@@ -117,7 +118,8 @@
 
     <div class="card">
         <div class="input-group-title"><span class="icon">📍</span>География</div>
-        <input type="text" id="birthCity" class="input-field" placeholder="Город рождения"> <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас (город)">
+        <input type="text" id="birthCity" class="input-field" placeholder="Город рождения">
+        <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас">
     </div>
 
     <div class="card">
@@ -141,16 +143,16 @@
         <div class="result-item" style="font-weight: bold; color: white;">Нумерологическая Матрица:</div>
         <div class="result-matrix-grid">
             <div class="result-matrix-item">
-                <span class="title">Фундаментальное<br>ЧЖП</span>
+                <span class="title">Число<br>Жизни</span>
                 <div class="circle" id="resChzhp"></div>
             </div>
             <div class="result-matrix-item">
-                <span class="title">Число Мира<br>Дня</span>
+                <span class="title">Число<br>Мира</span>
                 <div class="circle" id="resGlobal"></div>
             </div>
             <div class="result-matrix-item">
-                <span class="title">ТВОЕ ЛИЧНОЕ<br>ЧИСЛО ДНЯ</span>
-                <div class="circle" id="resPersonal"></div>
+                <span class="title" style="color: white; font-weight: bold;">ЧИСЛО<br>ДНЯ</span>
+                <div class="circle" id="resPersonal" style="background: #f2c94c; color: #101625;"></div>
             </div>
         </div>
         <div class="result-item" style="color: #6e7a9e; font-style: italic; margin-top: 20px;" id="resInterpretation"></div>
@@ -176,9 +178,8 @@
         tg.expand();
 
         let selectedDate = 'today';
-        setDate('today'); // инициализация
+        setDate('today');
 
-        // Установка текущей даты в заголовок
         function updateHeaderDate(mode) {
             let target = new Date();
             if(mode === 'tomorrow') {
@@ -197,7 +198,6 @@
             document.getElementById('btn-tomorrow').className = date === 'tomorrow' ? 'btn active' : 'btn';
         }
 
-        // Железная маска для даты (ДД/ММ/ГГГГ)
         document.getElementById('birthDate').addEventListener('input', function (e) {
             let matrix = '__/__/____';
             let i = 0;
@@ -209,7 +209,6 @@
             });
         });
 
-        // Железная маска для времени (ЧЧ:ММ)
         document.getElementById('birthTime').addEventListener('input', function (e) {
             let matrix = '__:__';
             let i = 0;
@@ -225,7 +224,7 @@
             1: "День активных действий, лидерства и личного прорыва. Начинай новые проекты!",
             2: "День дипломатии, компромиссов и работы в паре. Действуй мягко, прислушивайся к другим.",
             3: "🔥 Твой день творчества, самовыражения, общения и легкого решения проблем! Идеально для генерации идей.",
-            4: "День структуры, упорного труда и наведения порядка в делах, коде или планах.",
+            4: "Четверка - это день трудяг и трудоголиков. Ничего не удастся без долгого, нудного, кропотливого труда. Отдыхать в этот день придется мало.",
             5: "День свободы, путешествий, перемен и неожиданных возможностей. Будь гибким!",
             6: "День семьи, уюта, заботы о близких и гармонизации пространства вокруг себя.",
             7: "День глубоких размышлений, учебы, кодинга, медитации и уединения.",
@@ -251,32 +250,47 @@
             let month = parseInt(parts[1], 10);
             let year = parseInt(parts[2], 10);
 
-            // 1. Считаем ЧЖП (Число Жизненного Пути)
+            // 1. Считаем ЧЖП
             let chzhp = digRoot(day + month + year);
 
-            // 2. Определение целевой даты
+            // 2. Целевая дата
             let target = new Date();
             if(selectedDate === 'tomorrow') {
                 target.setDate(target.getDate() + 1);
             }
 
-            // 3. Общее число мира на этот день (День+Месяц+Год)
+            // 3. Общее число мира на этот день
             let tDay = target.getDate();
             let tMonth = target.getMonth() + 1; 
             let tYear = target.getFullYear();
             
-            // Считаем сумму цифр даты мира (например 31 + 5 + 2026)
             let globalSum = 0;
             let dateStr = "" + tDay + tMonth + tYear;
             for(let i=0; i<dateStr.length; i++) { globalSum += parseInt(dateStr[i], 10); }
             let globalNum = digRoot(globalSum);
 
-            // 4. ТВОЕ ЛИЧНОЕ ЧИСЛО ДНЯ (По *НОВОЙ* формуле: digRoot(tDay))
-            // Пользователь просил, чтобы для ЧЖП 8 и 31 мая вывело 4.
-            // СТАРАЯ ФОРМУЛА: digRoot(chzhp + tDay + tMonth) -> digRoot(8 + 31 + 5) -> digRoot(44) -> 8. ОШИБКА.
-            // НОВАЯ ФОРМУЛА: digRoot(tDay) -> digRoot(31) -> 4. ГАРАНТИРУЕТ 4.
+            // 4. ТВОЕ ЛИЧНОЕ ЧИСЛО ДНЯ (По дню: выдаст 4 для 31 числа)
+            let personalNum = digRoot(tDay);
 
-            let personalNum = digRoot(tDay); // ИСПРАВЛЕНО!
+            // Заполнение блока результатов
+            document.getElementById('resName').innerHTML = `👤 Профиль: <b>${fullName}</b>`;
+            document.getElementById('resGeography').innerHTML = `📍 Из <b>${birthCity}</b> сейчас в <b>${currentCity}</b>`;
+            
+            document.getElementById('resChzhp').innerText = chzhp;
+            document.getElementById('resGlobal').innerText = globalNum;
+            document.getElementById('resPersonal').innerText = personalNum;
+            
+            document.getElementById('resInterpretation').innerText = INTERPRETATIONS[personalNum] || '';
 
-            // Заполнение результатов
-            document.getElementById('resName').innerHTML = `👤 Профиль: <b>${fullName}
+            // Показываем карточку результата
+            let box = document.getElementById('resultBox');
+            box.style.display = 'block';
+            
+            // Скроллим к ней
+            setTimeout(() => {
+                box.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 100);
+        }
+    </script>
+</body>
+</html>
