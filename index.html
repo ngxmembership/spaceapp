@@ -1,296 +1,276 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #101625; color: white; margin: 0; padding: 20px 20px 80px 20px;
-            display: flex; flex-direction: column; align-items: center; box-sizing: border-box;
-            min-height: 100vh;
-        }
-        .header { text-align: center; margin-bottom: 25px; width: 100%; display: flex; align-items: center; justify-content: space-between;}
-        .header h1 { font-size: 26px; margin: 0; color: white; font-weight: bold;}
-        .header .menu-icon { font-size: 30px; color: #6e7a9e; cursor: pointer;}
-
-        .section-title {
-            width: 100%; color: #6e7a9e; font-size: 14px; font-weight: normal; 
-            letter-spacing: 0.5px; margin: 0 0 10px 10px; text-transform: none;
-        }
-
-        .card {
-            background: #1a1f2e; border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px; padding: 20px; width: 100%; margin-bottom: 15px; box-sizing: border-box;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .input-group-title {
-            font-size: 18px; font-weight: bold; color: white; margin: 0 0 15px 0; display: flex; align-items: center;
-        }
-        .input-group-title .icon { font-size: 24px; margin-right: 10px;}
-
-        .input-field {
-            width: 100%; background: #252b41; border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px; padding: 14px; color: white; font-size: 16px; margin-bottom: 12px;
-            box-sizing: border-box; outline: none; transition: border-color 0.3s;
-        }
-        .input-field:focus { border-color: #f2c94c; }
-
-        .row { display: flex; gap: 10px; width: 100%; }
-        .row .input-field { flex: 1; }
-
-        .btn-group { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; background: #252b41; border-radius: 14px; padding: 5px; box-sizing: border-box;}
-        .btn {
-            flex: 1; padding: 12px; border-radius: 10px; border: none;
-            background: transparent; color: #6e7a9e; cursor: pointer; font-weight: 600; font-size: 16px; transition: 0.3s;
-        }
-        .btn.active { background: #f2c94c; color: #101625; }
-
-        .toggle-container { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #3e4869; transition: .4s; border-radius: 34px;
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px;
-            background-color: white; transition: .4s; border-radius: 50%;
-        }
-        input:checked + .slider { background-color: #f2c94c; }
-        input:checked + .slider:before { transform: translateX(24px); }
-
-        .main-btn {
-            background: #f2c94c; color: #101625; padding: 18px; border-radius: 16px;
-            width: 100%; border: none; font-size: 18px; font-weight: bold; margin-top: 15px;
-            cursor: pointer; box-shadow: 0 6px 20px rgba(242, 201, 76, 0.3); transition: transform 0.1s, box-shadow 0.2s;
-        }
-        .main-btn:active { transform: translateY(2px); box-shadow: 0 3px 10px rgba(242, 201, 76, 0.2); }
-
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: #1a1f2e;
-            display: flex; justify-content: space-around; align-items: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.05); z-index: 1000;
-        }
-        .bottom-nav-item { text-align: center; color: #6e7a9e; cursor: pointer; font-size: 12px; transition: 0.3s;}
-        .bottom-nav-item .icon { font-size: 24px; display: block; margin-bottom: 2px;}
-        .bottom-nav-item.active { color: white;}
-        .bottom-nav-item.active .icon { color: #f2c94c;}
-
-        .result-box {
-            display: none; background: #1a1f2e; border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px; padding: 20px; width: 100%; margin-top: 20px; box-sizing: border-box;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-        .result-box h2 { color: white; font-size: 20px; margin: 0 0 20px 0; font-weight: bold; }
-        .result-item { margin-bottom: 12px; font-size: 16px; line-height: 1.5; color: white; }
-        .result-item b { font-weight: bold; color: #f2c94c; }
-        .result-matrix-grid { display: flex; justify-content: space-between; margin-top: 15px; gap: 10px;}
-        .result-matrix-item { flex: 1; background: #252b41; border-radius: 14px; padding: 15px; text-align: center;}
-        .result-matrix-item .title { font-size: 13px; color: #6e7a9e; margin-bottom: 10px; display: block;}
-        .result-matrix-item .circle { width: 50px; height: 50px; background: #1a1f2e; border: 2px solid #f2c94c; border-radius: 50%; color: #f2c94c; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto;}
-
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+body {
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+background: #101625; color: white; margin: 0; padding: 20px 20px 80px 20px;
+display: flex; flex-direction: column; align-items: center; box-sizing: border-box;
+min-height: 100vh;
+}
+.header { text-align: center; margin-bottom: 25px; width: 100%; display: flex; align-items: center; justify-content: space-between;}
+.header h1 { font-size: 26px; margin: 0; color: white; font-weight: bold;}
+.header .menu-icon { font-size: 30px; color: #6e7a9e; cursor: pointer;}
+.section-title {
+width: 100%; color: #6e7a9e; font-size: 14px; font-weight: normal;
+letter-spacing: 0.5px; margin: 0 0 10px 10px; text-transform: none;
+}
+.card {
+background: #1a1f2e; border: 1px solid rgba(255, 255, 255, 0.05);
+border-radius: 20px; padding: 20px; width: 100%; margin-bottom: 15px; box-sizing: border-box;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.input-group-title {
+font-size: 18px; font-weight: bold; color: white; margin: 0 0 15px 0; display: flex; align-items: center;
+}
+.input-group-title .icon { font-size: 24px; margin-right: 10px;}
+.input-field {
+width: 100%; background: #252b41; border: 1px solid rgba(255, 255, 255, 0.1);
+border-radius: 12px; padding: 14px; color: white; font-size: 16px; margin-bottom: 12px;
+box-sizing: border-box; outline: none; transition: border-color 0.3s;
+}
+.input-field:focus { border-color: #f2c94c; }
+.row { display: flex; gap: 10px; width: 100%; }
+.row .input-field { flex: 1; }
+.btn-group { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; background: #252b41; border-radius: 14px; padding: 5px; box-sizing: border-box;}
+.btn {
+flex: 1; padding: 12px; border-radius: 10px; border: none;
+background: transparent; color: #6e7a9e; cursor: pointer; font-weight: 600; font-size: 16px; transition: 0.3s;
+}
+.btn.active { background: #f2c94c; color: #101625; }
+.toggle-container { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+background-color: #3e4869; transition: .4s; border-radius: 34px;
+}
+.slider:before {
+position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px;
+background-color: white; transition: .4s; border-radius: 50%;
+}
+input:checked + .slider { background-color: #f2c94c; }
+input:checked + .slider:before { transform: translateX(24px); }
+.main-btn {
+background: #f2c94c; color: #101625; padding: 18px; border-radius: 16px;
+width: 100%; border: none; font-size: 18px; font-weight: bold; margin-top: 15px;
+cursor: pointer; box-shadow: 0 6px 20px rgba(242, 201, 76, 0.3); transition: transform 0.1s, box-shadow 0.2s;
+}
+.main-btn:active { transform: translateY(2px); box-shadow: 0 3px 10px rgba(242, 201, 76, 0.2); }
+.send-btn {
+background: #3e4869; color: #fff; padding: 16px; border-radius: 16px;
+width: 100%; border: none; font-size: 16px; font-weight: bold; margin-top: 10px;
+cursor: pointer; transition: transform 0.1s;
+}
+.send-btn:active { transform: translateY(2px); }
+.bottom-nav {
+position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: #1a1f2e;
+display: flex; justify-content: space-around; align-items: center;
+border-top: 1px solid rgba(255, 255, 255, 0.05); z-index: 1000;
+}
+.bottom-nav-item { text-align: center; color: #6e7a9e; cursor: pointer; font-size: 12px; transition: 0.3s;}
+.bottom-nav-item .icon { font-size: 24px; display: block; margin-bottom: 2px;}
+.bottom-nav-item.active { color: white;}
+.bottom-nav-item.active .icon { color: #f2c94c;}
+.result-box {
+display: none; background: #1a1f2e; border: 1px solid rgba(255, 255, 255, 0.05);
+border-radius: 20px; padding: 20px; width: 100%; margin-top: 20px; box-sizing: border-box;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.result-box h2 { color: white; font-size: 20px; margin: 0 0 20px 0; font-weight: bold; }
+.result-item { margin-bottom: 12px; font-size: 16px; line-height: 1.5; color: white; }
+.result-item b { font-weight: bold; color: #f2c94c; }
+.result-matrix-grid { display: flex; justify-content: space-between; margin-top: 15px; gap: 10px;}
+.result-matrix-item { flex: 1; background: #252b41; border-radius: 14px; padding: 15px; text-align: center;}
+.result-matrix-item .title { font-size: 13px; color: #6e7a9e; margin-bottom: 10px; display: block;}
+.result-matrix-item .circle { width: 50px; height: 50px; background: #1a1f2e; border: 2px solid #f2c94c; border-radius: 50%; color: #f2c94c; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto;}
+</style>
 </head>
 <body>
-    <div class="header">
-        <div class="menu-icon">☰</div>
-        <h1 id="headerDate">31 Мая</h1>
-        <div style="width: 30px;"></div>
-    </div>
-
-    <div class="section-title">Ввод и настройка данных</div>
-
-    <div class="card">
-        <div class="input-group-title"><span class="icon">👤</span>Профиль и Период</div>
-        <div class="btn-group">
-            <button class="btn active" id="btn-today" onclick="setDate('today')">Сегодня</button>
-            <button class="btn" id="btn-tomorrow" onclick="setDate('tomorrow')">Завтра</button>
-        </div>
-        <input type="text" id="fullName" class="input-field" placeholder="Имя и Фамилия">
-        <div class="row">
-            <input type="text" id="birthDate" class="input-field" placeholder="ДД/ММ/ГГГГ" maxlength="10">
-            <input type="text" id="birthTime" class="input-field" placeholder="ЧЧ:ММ" maxlength="5">
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="input-group-title"><span class="icon">📍</span>География</div>
-        <input type="text" id="birthCity" class="input-field" placeholder="Город рождения">
-        <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас">
-    </div>
-
-    <div class="card">
-        <div class="input-group-title"><span class="icon">⚙️</span>Настройки</div>
-        <div class="toggle-container">
-            <span style="font-size: 16px; color: white;">Включить биологические часы</span>
-            <label class="switch">
-                <input type="checkbox" id="circadianToggle" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-    </div>
-
-    <button class="main-btn" onclick="calculateInApp()">СГЕНЕРИРОВАТЬ ОТЧЕТ</button>
-
-    <div id="resultBox" class="result-box">
-        <h2>🪐 Результаты Расчета:</h2>
-        <div class="result-item" id="resName"></div>
-        <div class="result-item" id="resGeography"></div>
-        <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 20px 0;">
-        <div class="result-item" style="font-weight: bold; color: white;">Нумерологическая Матрица:</div>
-        <div class="result-matrix-grid">
-            <div class="result-matrix-item">
-                <span class="title">Число<br>Жизни</span>
-                <div class="circle" id="resChzhp"></div>
-            </div>
-            <div class="result-matrix-item">
-                <span class="title">Число<br>Мира</span>
-                <div class="circle" id="resGlobal"></div>
-            </div>
-            <div class="result-matrix-item">
-                <span class="title" style="color: white; font-weight: bold;">ЧИСЛО<br>ДНЯ</span>
-                <div class="circle" id="resPersonal" style="background: #f2c94c; color: #101625;"></div>
-            </div>
-        </div>
-        <div class="result-item" style="color: #6e7a9e; font-style: italic; margin-top: 20px;" id="resInterpretation"></div>
-    </div>
-
-    <div class="bottom-nav">
-        <div class="bottom-nav-item active">
-            <span class="icon">🏠</span>Дом
-        </div>
-        <div class="bottom-nav-item">
-            <span class="icon">📅</span>Прогноз
-        </div>
-        <div class="bottom-nav-item">
-            <span class="icon">👤</span>Профиль
-        </div>
-        <div class="bottom-nav-item">
-            <span class="icon">⚙️</span>Настройки
-        </div>
-    </div>
-
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
-
-        let selectedDate = 'today';
-        setDate('today');
-
-        function updateHeaderDate(mode) {
-            let target = new Date();
-            if(mode === 'tomorrow') {
-                target.setDate(target.getDate() + 1);
-            }
-            let day = target.getDate();
-            const months = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
-            let month = months[target.getMonth()];
-            document.getElementById('headerDate').innerText = `${day} ${month}`;
-        }
-
-        function setDate(date) {
-            selectedDate = date;
-            updateHeaderDate(date);
-            document.getElementById('btn-today').className = date === 'today' ? 'btn active' : 'btn';
-            document.getElementById('btn-tomorrow').className = date === 'tomorrow' ? 'btn active' : 'btn';
-        }
-
-        document.getElementById('birthDate').addEventListener('input', function (e) {
-            let matrix = '__/__/____';
-            let i = 0;
-            let def = matrix.replace(/\D/g, '');
-            let val = this.value.replace(/\D/g, '');
-            if (def.length >= val.length) val = def;
-            this.value = matrix.replace(/./g, function (a) {
-                return /[_\d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? '' : a;
-            });
-        });
-
-        document.getElementById('birthTime').addEventListener('input', function (e) {
-            let matrix = '__:__';
-            let i = 0;
-            let def = matrix.replace(/\D/g, '');
-            let val = this.value.replace(/\D/g, '');
-            if (def.length >= val.length) val = def;
-            this.value = matrix.replace(/./g, function (a) {
-                return /[_\d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? '' : a;
-            });
-        });
-
-        const INTERPRETATIONS = {
-            1: "День активных действий, лидерства и личного прорыва. Начинай новые проекты!",
-            2: "День дипломатии, компромиссов и работы в паре. Действуй мягко, прислушивайся к другим.",
-            3: "🔥 Твой день творчества, самовыражения, общения и легкого решения проблем! Идеально для генерации идей.",
-            4: "Четверка - это день трудяг и трудоголиков. Ничего не удастся без долгого, нудного, кропотливого труда. Отдыхать в этот день придется мало.",
-            5: "День свободы, путешествий, перемен и неожиданных возможностей. Будь гибким!",
-            6: "День семьи, уюта, заботы о близких и гармонизации пространства вокруг себя.",
-            7: "День глубоких размышлений, учебы, кодинга, медитации и уединения.",
-            8: "День больших масштабов, финансов, бизнеса и подведения крупных результатов.",
-            9: "День завершения старых циклов, отдачи долгов и очищения пространства от хлама."
-        };
-
-        function digRoot(n) { return (n - 1) % 9 + 1; }
-
-        function calculateInApp() {
-            let fullName = document.getElementById('fullName').value.trim();
-            let birthStr = document.getElementById('birthDate').value.trim();
-            let birthCity = document.getElementById('birthCity').value.trim() || "Не указан";
-            let currentCity = document.getElementById('currentCity').value.trim();
-
-            if(!fullName || birthStr.length < 10 || !currentCity) {
-                alert("Заполните Имя, Дату рождения и Текущий город!");
-                return;
-            }
-
-            let parts = birthStr.split('/');
-            let day = parseInt(parts[0], 10);
-            let month = parseInt(parts[1], 10);
-            let year = parseInt(parts[2], 10);
-
-            // 1. Считаем ЧЖП
-            let chzhp = digRoot(day + month + year);
-
-            // 2. Целевая дата
-            let target = new Date();
-            if(selectedDate === 'tomorrow') {
-                target.setDate(target.getDate() + 1);
-            }
-
-            // 3. Общее число мира на этот день
-            let tDay = target.getDate();
-            let tMonth = target.getMonth() + 1; 
-            let tYear = target.getFullYear();
-            
-            let globalSum = 0;
-            let dateStr = "" + tDay + tMonth + tYear;
-            for(let i=0; i<dateStr.length; i++) { globalSum += parseInt(dateStr[i], 10); }
-            let globalNum = digRoot(globalSum);
-
-            // 4. ТВОЕ ЛИЧНОЕ ЧИСЛО ДНЯ (По дню: выдаст 4 для 31 числа)
-            let personalNum = digRoot(tDay);
-
-            // Заполнение блока результатов
-            document.getElementById('resName').innerHTML = `👤 Профиль: <b>${fullName}</b>`;
-            document.getElementById('resGeography').innerHTML = `📍 Из <b>${birthCity}</b> сейчас в <b>${currentCity}</b>`;
-            
-            document.getElementById('resChzhp').innerText = chzhp;
-            document.getElementById('resGlobal').innerText = globalNum;
-            document.getElementById('resPersonal').innerText = personalNum;
-            
-            document.getElementById('resInterpretation').innerText = INTERPRETATIONS[personalNum] || '';
-
-            // Показываем карточку результата
-            let box = document.getElementById('resultBox');
-            box.style.display = 'block';
-            
-            // Скроллим к ней
-            setTimeout(() => {
-                box.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            }, 100);
-        }
-    </script>
+<div class="header">
+<div class="menu-icon">☰</div>
+<h1 id="headerDate">31 Мая</h1>
+<div style="width: 30px;"></div>
+</div>
+<div class="section-title">Ввод и настройка данных</div>
+<div class="card">
+<div class="input-group-title">👤Профиль и Период</div>
+<div class="btn-group">
+<button class="btn active" id="btn-today" onclick="setDate('today')">Сегодня</button>
+<button class="btn" id="btn-tomorrow" onclick="setDate('tomorrow')">Завтра</button>
+</div>
+<input type="text" id="fullName" class="input-field" placeholder="Имя и Фамилия">
+<div class="row">
+<input type="text" id="birthDate" class="input-field" placeholder="ДД/ММ/ГГГГ" maxlength="10">
+<input type="text" id="birthTime" class="input-field" placeholder="ЧЧ:ММ" maxlength="5">
+</div>
+</div>
+<div class="card">
+<div class="input-group-title">📍География</div>
+<input type="text" id="birthCity" class="input-field" placeholder="Город рождения">
+<input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас">
+</div>
+<div class="card">
+<div class="input-group-title">⚙️Настройки</div>
+<div class="toggle-container">
+Включить биологические часы
+<label class="switch">
+<input type="checkbox" id="circadianToggle" checked>
+</label>
+</div>
+</div>
+<button class="main-btn" onclick="calculateInApp()">СГЕНЕРИРОВАТЬ ОТЧЕТ</button>
+<button class="send-btn" onclick="sendReportToBot()">📩 ПОЛНЫЙ ОТЧЁТ В ЧАТ</button>
+<div id="resultBox" class="result-box">
+<h2>🪐 Результаты Расчета:</h2>
+<div class="result-item" id="resName"></div>
+<div class="result-item" id="resGeography"></div>
+<hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 20px 0;">
+<div class="result-item" style="font-weight: bold; color: white;">Нумерологическая Матрица:</div>
+<div class="result-matrix-grid">
+<div class="result-matrix-item">
+Число
+Жизни
+<div class="circle" id="resChzhp"></div>
+</div>
+<div class="result-matrix-item">
+Число
+Мира
+<div class="circle" id="resGlobal"></div>
+</div>
+<div class="result-matrix-item">
+ЧИСЛО
+ДНЯ
+<div class="circle" id="resPersonal" style="background: #f2c94c; color: #101625;"></div>
+</div>
+</div>
+<div class="result-item" style="color: #6e7a9e; font-style: italic; margin-top: 20px;" id="resInterpretation"></div>
+</div>
+<div class="bottom-nav">
+<div class="bottom-nav-item active">
+🏠Дом
+</div>
+<div class="bottom-nav-item">
+📅Прогноз
+</div>
+<div class="bottom-nav-item">
+👤Профиль
+</div>
+<div class="bottom-nav-item">
+⚙️Настройки
+</div>
+</div>
+<script>
+let tg = window.Telegram.WebApp;
+tg.expand();
+let selectedDate = 'today';
+setDate('today');
+function updateHeaderDate(mode) {
+let target = new Date();
+if (mode === 'tomorrow') {
+target.setDate(target.getDate() + 1);
+}
+let day = target.getDate();
+const months = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
+let month = months[target.getMonth()];
+document.getElementById('headerDate').innerText = ${day} ${month};
+}
+function setDate(date) {
+selectedDate = date;
+updateHeaderDate(date);
+document.getElementById('btn-today').className = date === 'today' ? 'btn active' : 'btn';
+document.getElementById('btn-tomorrow').className = date === 'tomorrow' ? 'btn active' : 'btn';
+}
+document.getElementById('birthDate').addEventListener('input', function (e) {
+let matrix = '//';
+let i = 0;
+let def = matrix.replace(/D/g, '');
+let val = this.value.replace(/D/g, '');
+if (def.length >= val.length) val = def;
+this.value = matrix.replace(/./g, function (a) {
+return /[_d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? '' : a;
+});
+});
+document.getElementById('birthTime').addEventListener('input', function (e) {
+let matrix = ':';
+let i = 0;
+let def = matrix.replace(/D/g, '');
+let val = this.value.replace(/D/g, '');
+if (def.length >= val.length) val = def;
+this.value = matrix.replace(/./g, function (a) {
+return /[_d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? '' : a;
+});
+});
+// СИНХРОНИЗИРОВАНО с ботом
+const INTERPRETATIONS = {
+1: "День активных действий, лидерства и личного прорыва. Начинай новые проекты!",
+2: "День дипломатии, компромиссов и работы в паре. Действуй мягко, прислушивайся к другим.",
+3: "🔥 Твой день творчества, самовыражения, общения и лёгкого решения проблем! Идеально для генерации идей.",
+4: "День структуры, упорного труда и наведения порядка в делах, коде или планах.",
+5: "День свободы, путешествий, перемен и неожиданных возможностей. Будь гибким!",
+6: "День семьи, уюта, заботы о близких и гармонизации пространства вокруг себя.",
+7: "День глубоких размышлений, учёбы, кодинга, медитации и уединения.",
+8: "День больших масштабов, финансов, бизнеса и подведения крупных результатов.",
+9: "День завершения старых циклов, отдачи долгов и очищения пространства от хлама."
+};
+function digRoot(n) { return n > 0 ? (n - 1) % 9 + 1 : 0; }
+// Проверка и сбор данных формы. Возвращает объект или null.
+function readForm() {
+let fullName = document.getElementById('fullName').value.trim();
+let birthStr = document.getElementById('birthDate').value.trim();
+let birthTime = document.getElementById('birthTime').value.trim() || "00:00";
+let birthCity = document.getElementById('birthCity').value.trim() || "Не указан";
+let currentCity = document.getElementById('currentCity').value.trim();
+if (!fullName || birthStr.length < 10 || !currentCity) {
+alert("Заполните Имя, Дату рождения и Текущий город!");
+return null;
+}
+return { fullName, birthStr, birthTime, birthCity, currentCity };
+}
+// Локальный расчёт (показывает результат прямо в окне)
+function calculateInApp() {
+let f = readForm();
+if (!f) return;
+let parts = f.birthStr.split('/');
+let day = parseInt(parts[0], 10);
+let month = parseInt(parts[1], 10);
+let year = parseInt(parts[2], 10);
+let chzhp = digRoot(day + month + year);
+let target = new Date();
+if (selectedDate === 'tomorrow') target.setDate(target.getDate() + 1);
+let tDay = target.getDate();
+let tMonth = target.getMonth() + 1;
+let tYear = target.getFullYear();
+let dateStr = String(tDay).padStart(2, '0') + String(tMonth).padStart(2, '0') + tYear;
+let globalSum = 0;
+for (let i = 0; i < dateStr.length; i++) { globalSum += parseInt(dateStr[i], 10); }
+let globalNum = digRoot(globalSum);
+// ЛИЧНОЕ ЧИСЛО ДНЯ — синхронно с ботом
+let personalNum = digRoot(chzhp + tDay + tMonth);
+document.getElementById('resName').innerHTML = 👤 Профиль: <b>${f.fullName}</b>;
+document.getElementById('resGeography').innerHTML = 📍 Из <b>${f.birthCity}</b> сейчас в <b>${f.currentCity}</b>;
+document.getElementById('resChzhp').innerText = chzhp;
+document.getElementById('resGlobal').innerText = globalNum;
+document.getElementById('resPersonal').innerText = personalNum;
+document.getElementById('resInterpretation').innerText = INTERPRETATIONS[personalNum] || '';
+let box = document.getElementById('resultBox');
+box.style.display = 'block';
+setTimeout(() => { box.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, 100);
+}
+// Отправка боту -> полный отчёт (планеты, рассвет/закат) придёт в чат
+function sendReportToBot() {
+let f = readForm();
+if (!f) return;
+let circadian = document.getElementById('circadianToggle').checked ? "1" : "0";
+// Формат: date_mode||имя||дата||время||город_рожд||город_сейчас||биочасы
+let payload = [
+selectedDate, f.fullName, f.birthStr, f.birthTime, f.birthCity, f.currentCity, circadian
+].join("||");
+tg.sendData(payload);  // после этого окно закроется, отчёт придёт в чат
+}
+</script>
 </body>
 </html>
