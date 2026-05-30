@@ -46,13 +46,13 @@
 <body>
     <div class="header">
         <h1>Space Panel 2.0</h1>
-        <p style="color: #888; margin: 5px 0 0 0; font-size: 14px;">Мгновенный расчет внутри экрана</p>
+        <p style="color: #888; margin: 5px 0 0 0; font-size: 14px;">Автономный расчет</p>
     </div>
 
     <div class="section-title">Выбор периода</div>
-    <div class="btn-group" style="display: flex; gap: 10px; width: 100%; margin-bottom: 10px;">
-        <button class="btn" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #1a1f2e; color: white; font-weight: 600;" id="btn-today" onclick="setDate('today')">Сегодня</button>
-        <button class="btn" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #1a1f2e; color: white; font-weight: 600;" id="btn-tomorrow" onclick="setDate('tomorrow')">Завтра</button>
+    <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 10px;">
+        <button id="btn-today" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #f2c94c; color: #0a0e17; font-weight: 600;" onclick="setDate('today')">Сегодня</button>
+        <button id="btn-tomorrow" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #1a1f2e; color: white; font-weight: 600;" onclick="setDate('tomorrow')">Завтра</button>
     </div>
 
     <div class="section-title">Личные данные</div>
@@ -88,7 +88,6 @@
         tg.expand();
 
         let selectedDate = 'today';
-        setDate('today');
 
         function setDate(date) {
             selectedDate = date;
@@ -98,21 +97,28 @@
             document.getElementById('btn-tomorrow').style.color = date === 'tomorrow' ? '#0a0e17' : 'white';
         }
 
-        // Умная маска даты: принимает точки, слэши или просто цифры
+        // Надежная маска для даты
         document.getElementById('birthDate').addEventListener('input', function (e) {
-            let val = e.target.value.replace(/[^0-9./]/g, '');
-            let digits = val.replace(/\D/g, '');
-            if (digits.length > 2) digits = digits.slice(0, 2) + '/' + digits.slice(2);
-            if (digits.length > 5) digits = digits.slice(0, 5) + '/' + digits.slice(5, 9);
-            e.target.value = digits || val;
+            let val = e.target.value.replace(/\D/g, '');
+            if (val.length > 8) val = val.slice(0, 8);
+            if (val.length >= 5) {
+                e.target.value = val.slice(0, 2) + '/' + val.slice(2, 4) + '/' + val.slice(4);
+            } else if (val.length >= 3) {
+                e.target.value = val.slice(0, 2) + '/' + val.slice(2);
+            } else {
+                e.target.value = val;
+            }
         });
 
-        // Умная маска времени
+        // Надежная маска для времени
         document.getElementById('birthTime').addEventListener('input', function (e) {
-            let val = e.target.value.replace(/[^0-9:]/g, '');
-            let digits = val.replace(/\D/g, '');
-            if (digits.length > 2) digits = digits.slice(0, 2) + ':' + digits.slice(2, 4);
-            e.target.value = digits || val;
+            let val = e.target.value.replace(/\D/g, '');
+            if (val.length > 4) val = val.slice(0, 4);
+            if (val.length >= 3) {
+                e.target.value = val.slice(0, 2) + ':' + val.slice(2);
+            } else {
+                e.target.value = val;
+            }
         });
 
         const INTERPRETATIONS = {
@@ -140,49 +146,45 @@
                 return;
             }
 
-            // Чистим разделители и приводим к массиву
-            let cleanBirth = birthStr.replace(/\./g, '/');
-            let parts = cleanBirth.split('/');
-            let day = parseInt(parts[0]);
-            let month = parseInt(parts[1]);
-            let year = parseInt(parts[2]);
+            let parts = birthStr.split('/');
+            let day = parseInt(parts[0], 10);
+            let month = parseInt(parts[1], 10);
+            let year = parseInt(parts[2], 10);
 
             // 1. Считаем ЧЖП
             let chzhp = digRoot(day + month + year);
 
-            // 2. Определяем целевую дату (сегодня/завтра)
+            // 2. Ветвление даты
             let target = new Date();
             if(selectedDate === 'tomorrow') {
                 target.setDate(target.getDate() + 1);
             }
 
-            // 3. Общее число дня (Мировое)
+            // 3. Общее число дня
             let tDay = target.getDate();
             let tMonth = target.getMonth() + 1; 
             let tYear = target.getFullYear();
             
             let dateStr = "" + tDay + tMonth + tYear;
             let globalSum = 0;
-            for(let i=0; i<dateStr.length; i++) { globalSum += parseInt(dateStr[i]); }
+            for(let i=0; i<dateStr.length; i++) { globalSum += parseInt(dateStr[i], 10); }
             let globalNum = digRoot(globalSum);
 
-            // 4. Твое Личное Число Дня
+            // 4. Личное число
             let personalNum = digRoot(chzhp + tDay + tMonth);
 
-            // Отображаем данные на экране пульта
+            // Заполняем поля (БЕЗ ОШИБОК)
             document.getElementById('resName').innerHTML = `👤 Профиль: <b>${fullName}</b>`;
             document.getElementById('resBirthCity').innerHTML = `📍 Родина: <b>${birthCity}</b>`;
             document.getElementById('resChzhp').innerHTML = `• Код рождения (ЧЖП): <span class="number-badge">${chzhp}</span>`;
             document.getElementById('resGlobal').innerHTML = `• Число мира на этот день: <span class="number-badge">${globalNum}</span>`;
             document.getElementById('resPersonal').innerHTML = `🎯 ТВОЕ ЛИЧНОЕ ЧИСЛО ДНЯ: <span class="number-badge">${personalNum}</span>`;
-            document.getElementById('resInterpretation').innerHTML = `👉 ${INTERPRETATIONS[personalNum] || ''}`;
+            document.getElementById('resInterpretation').innerHTML = `👉 ${INTERPRETATIONS[personalNum] || 'Действуй по обстоятельствам.'}`;
 
-            // Показываем скрытый блок
-            document.getElementById('resultBox').style.style = 'block';
-            document.getElementById('resultBox').style.display = 'block';
-            
-            // Плавный скролл вниз
-            document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth' });
+            // Показываем блок (ТУТ БЫЛА ОПЕЧАТКА, ТЕПЕРЬ ВСЁ ЧИСТО)
+            let box = document.getElementById('resultBox');
+            box.style.display = 'block';
+            box.scrollIntoView({ behavior: 'smooth' });
         }
     </script>
 </body>
