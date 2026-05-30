@@ -1,290 +1,323 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #101625; color: white; margin: 0; padding: 20px 20px 80px 20px;
-            display: flex; flex-direction: column; align-items: center; box-sizing: border-box;
-            min-height: 100vh;
-        }
-        .header { text-align: center; margin-bottom: 25px; width: 100%; display: flex; align-items: center; justify-content: space-between;}
-        .header h1 { font-size: 26px; margin: 0; color: white; font-weight: bold;}
-        .header .menu-icon { font-size: 30px; color: #6e7a9e; cursor: pointer;}
-        .section-title {
-            width: 100%; color: #6e7a9e; font-size: 14px; font-weight: normal;
-            letter-spacing: 0.5px; margin: 0 0 10px 10px; text-transform: none;
-        }
-        .card {
-            background: #1a1f2e; border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px; padding: 20px; width: 100%; margin-bottom: 15px; box-sizing: border-box;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-        .input-group-title {
-            font-size: 18px; font-weight: bold; color: white; margin: 0 0 15px 0; display: flex; align-items: center;
-        }
-        .input-group-title .icon { font-size: 24px; margin-right: 10px;}
-        .input-field {
-            width: 100%; background: #252b41; border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px; padding: 14px; color: white; font-size: 16px; margin-bottom: 12px;
-            box-sizing: border-box; outline: none; transition: border-color 0.3s;
-        }
-        .input-field:focus { border-color: #f2c94c; }
-        .row { display: flex; gap: 10px; width: 100%; }
-        .row .input-field { flex: 1; }
-        .btn-group { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; background: #252b41; border-radius: 14px; padding: 5px; box-sizing: border-box;}
-        .btn {
-            flex: 1; padding: 12px; border-radius: 10px; border: none;
-            background: transparent; color: #6e7a9e; cursor: pointer; font-weight: 600; font-size: 16px; transition: 0.3s;
-        }
-        .btn.active { background: #f2c94c; color: #101625; }
-        .toggle-container { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #3e4869; transition: .4s; border-radius: 34px;
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px;
-            background-color: white; transition: .4s; border-radius: 50%;
-        }
-        input:checked + .slider { background-color: #f2c94c; }
-        input:checked + .slider:before { transform: translateX(24px); }
-        .main-btn {
-            background: #f2c94c; color: #101625; padding: 18px; border-radius: 16px;
-            width: 100%; border: none; font-size: 18px; font-weight: bold; margin-top: 15px;
-            cursor: pointer; box-shadow: 0 6px 20px rgba(242, 201, 76, 0.3); transition: transform 0.1s, box-shadow 0.2s;
-        }
-        .main-btn:active { transform: translateY(2px); box-shadow: 0 3px 10px rgba(242, 201, 76, 0.2); }
-        .send-btn {
-            background: #3e4869; color: #fff; padding: 16px; border-radius: 16px;
-            width: 100%; border: none; font-size: 16px; font-weight: bold; margin-top: 10px;
-            cursor: pointer; transition: transform 0.1s;
-        }
-        .send-btn:active { transform: translateY(2px); }
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: #1a1f2e;
-            display: flex; justify-content: space-around; align-items: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.05); z-index: 1000;
-        }
-        .bottom-nav-item { text-align: center; color: #6e7a9e; cursor: pointer; font-size: 12px; transition: 0.3s;}
-        .bottom-nav-item .icon { font-size: 24px; display: block; margin-bottom: 2px;}
-        .bottom-nav-item.active { color: white;}
-        .bottom-nav-item.active .icon { color: #f2c94c;}
-        .result-box {
-            display: none; background: #1a1f2e; border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px; padding: 20px; width: 100%; margin-top: 20px; box-sizing: border-box;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-        .result-box h2 { color: white; font-size: 20px; margin: 0 0 20px 0; font-weight: bold; }
-        .result-item { margin-bottom: 12px; font-size: 16px; line-height: 1.5; color: white; }
-        .result-item b { font-weight: bold; color: #f2c94c; }
-        .result-matrix-grid { display: flex; justify-content: space-between; margin-top: 15px; gap: 10px;}
-        .result-matrix-item { flex: 1; background: #252b41; border-radius: 14px; padding: 15px; text-align: center;}
-        .result-matrix-item .title { font-size: 13px; color: #6e7a9e; margin-bottom: 10px; display: block;}
-        .result-matrix-item .circle { width: 50px; height: 50px; background: #1a1f2e; border: 2px solid #f2c94c; border-radius: 50%; color: #f2c94c; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto;}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Космический Пульт</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root{ --bg:#070b18; --card:rgba(26,33,54,0.55); --line:rgba(255,255,255,0.08); --muted:#7c88b1; --gold:#f2c94c; --accent:#8a7bff; }
+html,body{ margin:0; padding:0; }
+body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; color:#fff; background:var(--bg); min-height:100vh; overflow-x:hidden; padding:18px 16px 90px; position:relative; }
+#stars{ position:fixed; inset:0; width:100%; height:100%; z-index:-2; }
+body::before{ content:""; position:fixed; inset:0; z-index:-1; background: radial-gradient(900px 500px at 80% -10%, rgba(138,123,255,0.25), transparent 60%), radial-gradient(700px 500px at -10% 20%, rgba(242,201,76,0.12), transparent 55%), radial-gradient(1000px 700px at 50% 120%, rgba(80,120,255,0.18), transparent 60%); animation:bgShift 16s ease-in-out infinite alternate; }
+@keyframes bgShift{ from{filter:hue-rotate(0deg);} to{filter:hue-rotate(25deg);} }
+.header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.header .menu{ font-size:26px; color:var(--muted); }
+.header h1{ font-size:22px; margin:0; font-weight:800; letter-spacing:.5px; background:linear-gradient(90deg,#fff,#cdb4ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.header .spark{ font-size:22px; }
+.section-title{ color:var(--muted); font-size:13px; margin:18px 6px 10px; letter-spacing:.4px; }
+.card{ background:var(--card); border:1px solid var(--line); border-radius:22px; padding:18px; margin-bottom:14px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 10px 30px rgba(0,0,0,0.35); animation:fadeUp .5s ease both; }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;} }
+.ig-title{ font-size:17px; font-weight:700; margin:0 0 14px; display:flex; align-items:center; }
+.ig-title .icon{ font-size:22px; margin-right:9px; }
+.input-field{ width:100%; background:rgba(37,43,65,0.8); border:1px solid var(--line); border-radius:13px; padding:14px; color:#fff; font-size:16px; margin-bottom:11px; outline:none; transition:.25s; }
+.input-field:focus{ border-color:var(--gold); box-shadow:0 0 0 3px rgba(242,201,76,0.15); }
+.input-field::placeholder{ color:#5d6588; }
+.row{ display:flex; gap:10px; } .row .input-field{ flex:1; }
+.btn-group{ display:flex; gap:8px; background:rgba(37,43,65,0.8); border-radius:14px; padding:5px; margin-bottom:13px; }
+.btn{ flex:1; padding:11px; border-radius:10px; border:none; background:transparent; color:var(--muted); font-weight:700; font-size:15px; transition:.3s; }
+.btn.active{ background:var(--gold); color:#0b1020; box-shadow:0 4px 14px rgba(242,201,76,.35); }
+.toggle-row{ display:flex; justify-content:space-between; align-items:center; }
+.switch{ position:relative; width:50px; height:27px; }
+.switch input{ opacity:0; width:0; height:0; }
+.slider{ position:absolute; inset:0; background:#3e4869; border-radius:34px; transition:.4s; cursor:pointer; }
+.slider:before{ content:""; position:absolute; height:19px; width:19px; left:4px; bottom:4px; background:#fff; border-radius:50%; transition:.4s; }
+input:checked + .slider{ background:var(--gold); }
+input:checked + .slider:before{ transform:translateX(23px); }
+.main-btn{ width:100%; padding:17px; border:none; border-radius:16px; font-size:17px; font-weight:800; cursor:pointer; margin-top:8px; background:linear-gradient(90deg,var(--gold),#ffd86b); color:#0b1020; box-shadow:0 8px 24px rgba(242,201,76,.35); transition:transform .1s; }
+.main-btn:active{ transform:translateY(2px); }
+.send-btn{ width:100%; padding:15px; border:none; border-radius:16px; font-size:15px; font-weight:700; cursor:pointer; margin-top:10px; background:linear-gradient(90deg,#5b54c9,#8a7bff); color:#fff; box-shadow:0 8px 24px rgba(138,123,255,.3); transition:transform .1s; }
+.send-btn:active{ transform:translateY(2px); }
+#dash{ display:none; }
+.rings{ display:flex; justify-content:space-between; gap:8px; }
+.ring-wrap{ flex:1; text-align:center; }
+.ring-wrap svg{ width:92px; height:92px; }
+.ring-bg{ fill:none; stroke:rgba(255,255,255,0.08); stroke-width:9; }
+.ring-fg{ fill:none; stroke-width:9; stroke-linecap:round; transform:rotate(-90deg); transform-origin:50% 50%; transition:stroke-dashoffset 1.3s cubic-bezier(.2,.8,.2,1); }
+.ring-val{ font-size:14px; font-weight:800; margin-top:2px; }
+.ring-lbl{ font-size:12px; color:var(--muted); margin-top:4px; }
+.day-num{ display:flex; align-items:center; gap:16px; }
+.day-circle{ min-width:74px; width:74px; height:74px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:34px; font-weight:900; color:#0b1020; background:radial-gradient(circle at 30% 30%, #ffe9a6, var(--gold)); box-shadow:0 0 26px rgba(242,201,76,.55); animation:pulse 2.6s ease-in-out infinite; }
+@keyframes pulse{ 0%,100%{ box-shadow:0 0 22px rgba(242,201,76,.45); } 50%{ box-shadow:0 0 36px rgba(242,201,76,.8); } }
+.day-text{ font-size:14px; line-height:1.5; color:#e7ebff; }
+.mini-grid{ display:flex; gap:10px; }
+.mini{ flex:1; background:rgba(37,43,65,0.7); border-radius:16px; padding:14px 6px; text-align:center; }
+.mini .t{ font-size:11px; color:var(--muted); display:block; margin-bottom:8px; }
+.mini .c{ width:46px; height:46px; margin:0 auto; border-radius:50%; border:2px solid var(--accent); color:#cdb4ff; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; }
+.py-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.py-cell{ background:rgba(37,43,65,0.7); border:1px solid var(--line); border-radius:14px; padding:12px 6px; text-align:center; min-height:74px; display:flex; flex-direction:column; justify-content:center; animation:fadeUp .5s both; }
+.py-cell.full{ border-color:rgba(242,201,76,.5); box-shadow:0 0 16px rgba(242,201,76,.18); }
+.py-digits{ font-size:20px; font-weight:800; letter-spacing:2px; color:var(--gold); min-height:24px; }
+.py-digits.empty{ color:#3e4869; font-weight:600; }
+.py-cap{ font-size:10px; color:var(--muted); margin-top:5px; }
+.bottom-nav{ position:fixed; bottom:0; left:0; width:100%; height:72px; background:rgba(16,21,38,0.92); backdrop-filter:blur(12px); display:flex; justify-content:space-around; align-items:center; border-top:1px solid var(--line); z-index:50; }
+.nav-item{ text-align:center; color:var(--muted); font-size:11px; }
+.nav-item .icon{ font-size:22px; display:block; margin-bottom:2px; }
+.nav-item.active{ color:#fff; } .nav-item.active .icon{ filter:drop-shadow(0 0 8px var(--gold)); }
+</style>
 </head>
 <body>
-    <div class="header">
-        <div class="menu-icon">☰</div>
-        <h1 id="headerDate">31 Мая</h1>
-        <div style="width: 30px;"></div>
+<canvas id="stars"></canvas>
+<div class="header">
+    <div class="menu">☰</div>
+    <h1 id="headerDate">Космос</h1>
+    <div class="spark">✨</div>
+</div>
+<div class="section-title">Ввод данных</div>
+<div class="card">
+    <div class="ig-title"><span class="icon">👤</span>Профиль и период</div>
+    <div class="btn-group">
+        <button class="btn active" id="btn-today" onclick="setDate('today')">Сегодня</button>
+        <button class="btn" id="btn-tomorrow" onclick="setDate('tomorrow')">Завтра</button>
     </div>
-    <div class="section-title">Ввод и настройка данных</div>
+    <input type="text" id="fullName" class="input-field" placeholder="Имя и Фамилия">
+    <div class="row">
+        <input type="text" id="birthDate" class="input-field" placeholder="ДД/ММ/ГГГГ" maxlength="10" inputmode="numeric">
+        <input type="text" id="birthTime" class="input-field" placeholder="ЧЧ:ММ" maxlength="5" inputmode="numeric">
+    </div>
+    <input type="text" id="birthCity" class="input-field" placeholder="Город рождения (необяз.)">
+    <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас">
+    <div class="toggle-row">
+        <span style="font-size:15px;">Биочасы в отчёте для чата</span>
+        <label class="switch"><input type="checkbox" id="circadianToggle" checked><span class="slider"></span></label>
+    </div>
+</div>
+<button class="main-btn" onclick="calculateInApp()">✨ РАССЧИТАТЬ</button>
+<button class="send-btn" onclick="sendReportToBot()">📩 Полный отчёт в чат</button>
+<div id="dash">
+    <div class="section-title">Биоритмы на выбранный день</div>
     <div class="card">
-        <div class="input-group-title"><span class="icon">👤</span>Профиль и Период</div>
-        <div class="btn-group">
-            <button class="btn active" id="btn-today" onclick="setDate('today')">Сегодня</button>
-            <button class="btn" id="btn-tomorrow" onclick="setDate('tomorrow')">Завтра</button>
-        </div>
-        <input type="text" id="fullName" class="input-field" placeholder="Имя и Фамилия">
-        <div class="row">
-            <input type="text" id="birthDate" class="input-field" placeholder="ДД/ММ/ГГГГ" maxlength="10">
-            <input type="text" id="birthTime" class="input-field" placeholder="ЧЧ:ММ" maxlength="5">
-        </div>
-    </div>
-    <div class="card">
-        <div class="input-group-title"><span class="icon">📍</span>География</div>
-        <input type="text" id="birthCity" class="input-field" placeholder="Город рождения">
-        <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас">
-    </div>
-    <div class="card">
-        <div class="input-group-title"><span class="icon">⚙️</span>Настройки</div>
-        <div class="toggle-container">
-            <span style="font-size: 16px; color: white;">Включить биологические часы</span>
-            <label class="switch">
-                <input type="checkbox" id="circadianToggle" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-    </div>
-    <button class="main-btn" onclick="calculateInApp()">СГЕНЕРИРОВАТЬ ОТЧЕТ</button>
-    <button class="send-btn" onclick="sendReportToBot()">📩 ПОЛНЫЙ ОТЧЁТ В ЧАТ</button>
-    <div id="resultBox" class="result-box">
-        <h2>🪐 Результаты Расчета:</h2>
-        <div class="result-item" id="resName"></div>
-        <div class="result-item" id="resGeography"></div>
-        <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 20px 0;">
-        <div class="result-item" style="font-weight: bold; color: white;">Нумерологическая Матрица:</div>
-        <div class="result-matrix-grid">
-            <div class="result-matrix-item">
-                <span class="title">Число<br>Жизни</span>
-                <div class="circle" id="resChzhp"></div>
+        <div class="rings">
+            <div class="ring-wrap">
+                <svg viewBox="0 0 100 100"><defs><linearGradient id="gP" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f9bff"/><stop offset="1" stop-color="#00e0ff"/></linearGradient></defs><circle class="ring-bg" cx="50" cy="50" r="42"/><circle class="ring-fg" id="ringP" cx="50" cy="50" r="42" stroke="url(#gP)"/></svg>
+                <div class="ring-val" id="valP">—</div><div class="ring-lbl">Физический</div>
             </div>
-            <div class="result-matrix-item">
-                <span class="title">Число<br>Мира</span>
-                <div class="circle" id="resGlobal"></div>
+            <div class="ring-wrap">
+                <svg viewBox="0 0 100 100"><defs><linearGradient id="gE" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07bff"/><stop offset="1" stop-color="#ff7bd5"/></linearGradient></defs><circle class="ring-bg" cx="50" cy="50" r="42"/><circle class="ring-fg" id="ringE" cx="50" cy="50" r="42" stroke="url(#gE)"/></svg>
+                <div class="ring-val" id="valE">—</div><div class="ring-lbl">Эмоционал.</div>
             </div>
-            <div class="result-matrix-item">
-                <span class="title" style="color: white; font-weight: bold;">ЧИСЛО<br>ДНЯ</span>
-                <div class="circle" id="resPersonal" style="background: #f2c94c; color: #101625;"></div>
+            <div class="ring-wrap">
+                <svg viewBox="0 0 100 100"><defs><linearGradient id="gI" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34e0a1"/><stop offset="1" stop-color="#c8ff5e"/></linearGradient></defs><circle class="ring-bg" cx="50" cy="50" r="42"/><circle class="ring-fg" id="ringI" cx="50" cy="50" r="42" stroke="url(#gI)"/></svg>
+                <div class="ring-val" id="valI">—</div><div class="ring-lbl">Интеллект.</div>
             </div>
         </div>
-        <div class="result-item" style="color: #6e7a9e; font-style: italic; margin-top: 20px;" id="resInterpretation"></div>
     </div>
-    <div class="bottom-nav">
-        <div class="bottom-nav-item active">
-            <span class="icon">🏠</span>Дом
-        </div>
-        <div class="bottom-nav-item">
-            <span class="icon">📅</span>Прогноз
-        </div>
-        <div class="bottom-nav-item">
-            <span class="icon">👤</span>Профиль
-        </div>
-        <div class="bottom-nav-item">
-            <span class="icon">⚙️</span>Настройки
+    <div class="section-title">Число дня</div>
+    <div class="card">
+        <div class="day-num">
+            <div class="day-circle" id="dayCircle">—</div>
+            <div class="day-text" id="dayText"></div>
         </div>
     </div>
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
-        let selectedDate = 'today';
-        setDate('today');
+    <div class="section-title">Нумерологическая матрица</div>
+    <div class="card">
+        <div class="mini-grid">
+            <div class="mini"><span class="t">Путь жизни</span><div class="c" id="mLife">—</div></div>
+            <div class="mini"><span class="t">Число души</span><div class="c" id="mSoul">—</div></div>
+            <div class="mini"><span class="t">Число мира</span><div class="c" id="mWorld">—</div></div>
+        </div>
+    </div>
+    <div class="section-title">Квадрат Пифагора</div>
+    <div class="card">
+        <div class="py-grid" id="pyGrid"></div>
+    </div>
+</div>
+<div class="bottom-nav">
+    <div class="nav-item active"><span class="icon">🏠</span>Дом</div>
+    <div class="nav-item"><span class="icon">📅</span>Прогноз</div>
+    <div class="nav-item"><span class="icon">👤</span>Профиль</div>
+    <div class="nav-item"><span class="icon">⚙️</span>Настройки</div>
+</div>
+<script>
+let tg = window.Telegram.WebApp;
+tg.expand();
+try { tg.setHeaderColor('#070b18'); tg.setBackgroundColor('#070b18'); } catch (e) {}
 
-        function updateHeaderDate(mode) {
-            let target = new Date();
-            if (mode === 'tomorrow') {
-                target.setDate(target.getDate() + 1);
-            }
-            let day = target.getDate();
-            const months = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
-            let month = months[target.getMonth()];
-            document.getElementById('headerDate').innerText = `${day} ${month}`;
+// Анимированное звёздное небо
+(function () {
+    const c = document.getElementById('stars'), x = c.getContext('2d');
+    let w, h, stars;
+    function init() {
+        w = c.width = window.innerWidth; h = c.height = window.innerHeight;
+        stars = Array.from({ length: 90 }, () => ({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.4 + 0.3, a: Math.random(), s: Math.random() * 0.02 + 0.004 }));
+    }
+    function loop() {
+        x.clearRect(0, 0, w, h);
+        for (const st of stars) {
+            st.a += st.s; let o = 0.4 + 0.6 * Math.abs(Math.sin(st.a));
+            x.beginPath(); x.arc(st.x, st.y, st.r, 0, 7); x.fillStyle = "rgba(255,255,255," + o + ")"; x.fill();
         }
+        requestAnimationFrame(loop);
+    }
+    init(); loop(); window.addEventListener('resize', init);
+})();
 
-        function setDate(date) {
-            selectedDate = date;
-            updateHeaderDate(date);
-            document.getElementById('btn-today').className = date === 'today' ? 'btn active' : 'btn';
-            document.getElementById('btn-tomorrow').className = date === 'tomorrow' ? 'btn active' : 'btn';
-        }
+let selectedDate = 'today';
 
-        document.getElementById('birthDate').addEventListener('input', function (e) {
-            let matrix = '__/__/____';
-            let i = 0;
-            let def = matrix.replace(/\D/g, '');
-            let val = this.value.replace(/\D/g, '');
-            if (def.length >= val.length) val = def;
-            this.value = matrix.replace(/./g, function (a) {
-                return /[_\d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? '' : a;
-            });
+function updateHeaderDate(mode) {
+    let t = new Date(); if (mode === 'tomorrow') t.setDate(t.getDate() + 1);
+    const m = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
+    document.getElementById('headerDate').innerText = t.getDate() + " " + m[t.getMonth()];
+}
+function setDate(d) {
+    selectedDate = d; updateHeaderDate(d);
+    document.getElementById('btn-today').className = d === 'today' ? 'btn active' : 'btn';
+    document.getElementById('btn-tomorrow').className = d === 'tomorrow' ? 'btn active' : 'btn';
+    if (document.getElementById('dash').style.display === 'block') calculateInApp(true);
+}
+setDate('today');
+
+function mask(el, matrix) {
+    el.addEventListener('input', function () {
+        let i = 0;
+        let val = this.value.replace(/\D/g, '');
+        this.value = matrix.replace(/./g, function (a) {
+            return /[_\d]/.test(a) && i < val.length ? val.charAt(i++) : (i >= val.length ? '' : a);
         });
+    });
+}
+mask(document.getElementById('birthDate'), '__/__/____');
+mask(document.getElementById('birthTime'), '__:__');
 
-        document.getElementById('birthTime').addEventListener('input', function (e) {
-            let matrix = '__:__';
-            let i = 0;
-            let def = matrix.replace(/\D/g, '');
-            let val = this.value.replace(/\D/g, '');
-            if (def.length >= val.length) val = def;
-            this.value = matrix.replace(/./g, function (a) {
-                return /[_\d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? '' : a;
-            });
-        });
+function digRoot(n) { return n > 0 ? (n - 1) % 9 + 1 : 0; }
 
-        // СИНХРОНИЗИРОВАНО с ботом
-        const INTERPRETATIONS = {
-            1: "День активных действий, лидерства и личного прорыва. Начинай новые проекты!",
-            2: "День дипломатии, компромиссов и работы в паре. Действуй мягко, прислушивайся к другим.",
-            3: "🔥 Твой день творчества, самовыражения, общения и лёгкого решения проблем! Идеально для генерации идей.",
-            4: "День структуры, упорного труда и наведения порядка в делах, коде или планах.",
-            5: "День свободы, путешествий, перемен и неожиданных возможностей. Будь гибким!",
-            6: "День семьи, уюта, заботы о близких и гармонизации пространства вокруг себя.",
-            7: "День глубоких размышлений, учёбы, кодинга, медитации и уединения.",
-            8: "День больших масштабов, финансов, бизнеса и подведения крупных результатов.",
-            9: "День завершения старых циклов, отдачи долгов и очищения пространства от хлама."
-        };
+// СИНХРОНИЗИРОВАНО с ботом
+const INTERPRETATIONS = {
+    1: "День активных действий, лидерства и личного прорыва. Начинай новые проекты!",
+    2: "День дипломатии, компромиссов и работы в паре. Действуй мягко, прислушивайся к другим.",
+    3: "🔥 Твой день творчества, самовыражения, общения и лёгкого решения проблем! Идеально для генерации идей.",
+    4: "День структуры, упорного труда и наведения порядка в делах, коде или планах.",
+    5: "День свободы, путешествий, перемен и неожиданных возможностей. Будь гибким!",
+    6: "День семьи, уюта, заботы о близких и гармонизации пространства вокруг себя.",
+    7: "День глубоких размышлений, учёбы, кодинга, медитации и уединения.",
+    8: "День больших масштабов, финансов, бизнеса и подведения крупных результатов.",
+    9: "День завершения старых циклов, отдачи долгов и очищения пространства от хлама."
+};
 
-        function digRoot(n) { return n > 0 ? (n - 1) % 9 + 1 : 0; }
+const PY_CAPS = { 1: 'Характер', 2: 'Энергия', 3: 'Талант', 4: 'Здоровье', 5: 'Логика', 6: 'Труд', 7: 'Удача', 8: 'Долг', 9: 'Память' };
 
-        // Проверка и сбор данных формы. Возвращает объект или null.
-        function readForm() {
-            let fullName = document.getElementById('fullName').value.trim();
-            let birthStr = document.getElementById('birthDate').value.trim();
-            let birthTime = document.getElementById('birthTime').value.trim() || "00:00";
-            let birthCity = document.getElementById('birthCity').value.trim() || "Не указан";
-            let currentCity = document.getElementById('currentCity').value.trim();
-            if (!fullName || birthStr.length < 10 || !currentCity) {
-                alert("Заполните Имя, Дату рождения и Текущий город!");
-                return null;
-            }
-            return { fullName, birthStr, birthTime, birthCity, currentCity };
-        }
+function readForm() {
+    let fullName = document.getElementById('fullName').value.trim();
+    let birthStr = document.getElementById('birthDate').value.trim();
+    let birthTime = document.getElementById('birthTime').value.trim() || "00:00";
+    let birthCity = document.getElementById('birthCity').value.trim() || "Не указан";
+    let currentCity = document.getElementById('currentCity').value.trim();
+    if (!fullName || birthStr.length < 10 || !currentCity) {
+        alert("Заполни Имя, Дату рождения (ДД/ММ/ГГГГ) и Текущий город!");
+        return null;
+    }
+    return { fullName, birthStr, birthTime, birthCity, currentCity };
+}
 
-        // Локальный расчёт (показывает результат прямо в окне)
-        function calculateInApp() {
-            let f = readForm();
-            if (!f) return;
+// ЛИЧНОЕ ЧИСЛО ДНЯ — классическая формула (синхронно с ботом)
+function personalDay(bd, bm, td, tm, ty) {
+    let pYear = digRoot(bd + bm + ty);
+    let pMonth = digRoot(pYear + tm);
+    return digRoot(pMonth + td);
+}
 
-            let parts = f.birthStr.split('/');
-            let day = parseInt(parts[0], 10);
-            let month = parseInt(parts[1], 10);
-            let year = parseInt(parts[2], 10);
+function setRing(ringId, valId, value) {
+    let C = 2 * Math.PI * 42;
+    let frac = (value + 100) / 200;
+    if (frac < 0) frac = 0; if (frac > 1) frac = 1;
+    let ring = document.getElementById(ringId);
+    ring.style.strokeDasharray = C;
+    ring.style.strokeDashoffset = C;
+    let arrow = value >= 0 ? '▲' : '▼';
+    document.getElementById(valId).innerHTML = value.toFixed(1) + '% <span style="font-size:11px;">' + arrow + '</span>';
+    setTimeout(function () { ring.style.strokeDashoffset = C * (1 - frac); }, 80);
+}
 
-            let chzhp = digRoot(day + month + year);
+function pythagoras(dd, mm, yyyy) {
+    let dateDigits = (String(dd) + String(mm) + String(yyyy)).split('').map(Number);
+    let n1 = dateDigits.reduce(function (a, b) { return a + b; }, 0);
+    let n2 = String(n1).split('').reduce(function (a, b) { return a + Number(b); }, 0);
+    let firstDigit = Number(String(dd)[0]);
+    let n3 = n1 - 2 * firstDigit;
+    let n4 = String(Math.abs(n3)).split('').reduce(function (a, b) { return a + Number(b); }, 0);
+    let all = dateDigits.join('') + String(n1) + String(n2) + String(Math.abs(n3)) + String(n4);
+    let counts = { 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '' };
+    for (let ch of all) { let d = Number(ch); if (d >= 1 && d <= 9) counts[d] += d; }
+    return counts;
+}
 
-            let target = new Date();
-            if (selectedDate === 'tomorrow') target.setDate(target.getDate() + 1);
-            let tDay = target.getDate();
-            let tMonth = target.getMonth() + 1;
-            let tYear = target.getFullYear();
+function renderPythagoras(counts) {
+    const order = [1, 4, 7, 2, 5, 8, 3, 6, 9];
+    let out = '';
+    order.forEach(function (d, idx) {
+        let v = counts[d];
+        let full = v.length > 0;
+        out += '<div class="py-cell ' + (full ? 'full' : '') + '" style="animation-delay:' + (idx * 0.05) + 's">'
+            + '<div class="py-digits ' + (full ? '' : 'empty') + '">' + (full ? v : '—') + '</div>'
+            + '<div class="py-cap">' + d + ' · ' + PY_CAPS[d] + '</div></div>';
+    });
+    document.getElementById('pyGrid').innerHTML = out;
+}
 
-            let dateStr = String(tDay).padStart(2, '0') + String(tMonth).padStart(2, '0') + tYear;
-            let globalSum = 0;
-            for (let i = 0; i < dateStr.length; i++) { globalSum += parseInt(dateStr[i], 10); }
-            let globalNum = digRoot(globalSum);
+function calculateInApp(silent) {
+    let f = readForm();
+    if (!f) return;
+    let p = f.birthStr.split('/');
+    let bd = parseInt(p[0], 10), bm = parseInt(p[1], 10), by = parseInt(p[2], 10);
+    if (!bd || !bm || !by) { alert("Проверь дату рождения (ДД/ММ/ГГГГ)"); return; }
 
-            // ЛИЧНОЕ ЧИСЛО ДНЯ — синхронно с ботом
-            let personalNum = digRoot(chzhp + tDay + tMonth);
+    let target = new Date();
+    if (selectedDate === 'tomorrow') target.setDate(target.getDate() + 1);
+    let td = target.getDate(), tm = target.getMonth() + 1, ty = target.getFullYear();
 
-            document.getElementById('resName').innerHTML = `👤 Профиль: <b>${f.fullName}</b>`;
-            document.getElementById('resGeography').innerHTML = `📍 Из <b>${f.birthCity}</b> сейчас в <b>${f.currentCity}</b>`;
-            document.getElementById('resChzhp').innerText = chzhp;
-            document.getElementById('resGlobal').innerText = globalNum;
-            document.getElementById('resPersonal').innerText = personalNum;
-            document.getElementById('resInterpretation').innerText = INTERPRETATIONS[personalNum] || '';
+    let lifePath = digRoot(bd + bm + by);
+    let soul = digRoot(bd);
+    let dateStr = String(td).padStart(2, '0') + String(tm).padStart(2, '0') + ty;
+    let worldSum = dateStr.split('').reduce(function (a, b) { return a + Number(b); }, 0);
+    let world = digRoot(worldSum);
+    let personal = personalDay(bd, bm, td, tm, ty);
 
-            let box = document.getElementById('resultBox');
-            box.style.display = 'block';
-            setTimeout(() => { box.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, 100);
-        }
+    // Биоритмы: синусоиды от количества прожитых дней
+    let birth = new Date(by, bm - 1, bd);
+    let days = Math.floor((target - birth) / 86400000);
+    let phys = Math.sin(2 * Math.PI * days / 23) * 100;
+    let emo = Math.sin(2 * Math.PI * days / 28) * 100;
+    let intel = Math.sin(2 * Math.PI * days / 33) * 100;
 
-        // Отправка боту -> полный отчёт (планеты, рассвет/закат) придёт в чат
-        function sendReportToBot() {
-            let f = readForm();
-            if (!f) return;
-            let circadian = document.getElementById('circadianToggle').checked ? "1" : "0";
-            // Формат: date_mode||имя||дата||время||город_рожд||город_сейчас||биочасы
-            let payload = [
-                selectedDate, f.fullName, f.birthStr, f.birthTime, f.birthCity, f.currentCity, circadian
-            ].join("||");
-            tg.sendData(payload);  // после этого окно закроется, отчёт придёт в чат
-        }
-    </script>
+    document.getElementById('dash').style.display = 'block';
+    setRing('ringP', 'valP', phys);
+    setRing('ringE', 'valE', emo);
+    setRing('ringI', 'valI', intel);
+
+    document.getElementById('dayCircle').innerText = personal;
+    document.getElementById('dayText').innerText = INTERPRETATIONS[personal] || '';
+    document.getElementById('mLife').innerText = lifePath;
+    document.getElementById('mSoul').innerText = soul;
+    document.getElementById('mWorld').innerText = world;
+
+    renderPythagoras(pythagoras(bd, bm, by));
+
+    if (!silent) {
+        setTimeout(function () { document.getElementById('dash').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
+    }
+}
+
+// Отправка боту -> полный отчёт (планеты, рассвет/закат) придёт в чат
+function sendReportToBot() {
+    let f = readForm();
+    if (!f) return;
+    let circadian = document.getElementById('circadianToggle').checked ? "1" : "0";
+    // Формат: date_mode||имя||дата||время||город_рожд||город_сейчас||биочасы
+    let payload = [selectedDate, f.fullName, f.birthStr, f.birthTime, f.birthCity, f.currentCity, circadian].join("||");
+    tg.sendData(payload);
+}
+</script>
 </body>
 </html>
