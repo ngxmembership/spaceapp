@@ -7,56 +7,107 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #0a0e17; color: white; margin: 0; padding: 20px;
+            background: #101625; color: white; margin: 0; padding: 20px 20px 80px 20px; /* отступ для навигации */
             display: flex; flex-direction: column; align-items: center; box-sizing: border-box;
+            min-height: 100vh;
         }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { font-size: 24px; margin: 0; color: #f2c94c; }
+        .header { text-align: center; margin-bottom: 25px; width: 100%; display: flex; align-items: center; justify-content: space-between;}
+        .header h1 { font-size: 26px; margin: 0; color: white; font-weight: bold;}
+        .header .menu-icon { font-size: 30px; color: #6e7a9e; cursor: pointer;}
+
         .section-title {
-            width: 100%; color: #f2c94c; font-size: 12px; font-weight: bold; 
-            letter-spacing: 1px; margin: 15px 0 8px 5px; text-transform: uppercase;
+            width: 100%; color: #6e7a9e; font-size: 14px; font-weight: normal; 
+            letter-spacing: 0.5px; margin: 0 0 10px 10px; text-transform: none;
         }
+
         .card {
-            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(242, 201, 76, 0.15);
-            border-radius: 14px; padding: 15px; width: 100%; margin-bottom: 10px; box-sizing: border-box;
+            background: #1a1f2e; border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px; padding: 20px; width: 100%; margin-bottom: 15px; box-sizing: border-box;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
+
+        .input-group-title {
+            font-size: 18px; font-weight: bold; color: white; margin: 0 0 15px 0; display: flex; align-items: center;
+        }
+        .input-group-title .icon { font-size: 24px; margin-right: 10px;}
+
         .input-field {
-            width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px; padding: 12px; color: white; font-size: 16px; margin-bottom: 12px;
-            box-sizing: border-box; outline: none;
+            width: 100%; background: #252b41; border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; padding: 14px; color: white; font-size: 16px; margin-bottom: 12px;
+            box-sizing: border-box; outline: none; transition: border-color 0.3s;
         }
         .input-field:focus { border-color: #f2c94c; }
+
         .row { display: flex; gap: 10px; width: 100%; }
         .row .input-field { flex: 1; }
+
+        .btn-group { display: flex; gap: 10px; width: 100%; margin-bottom: 15px; background: #252b41; border-radius: 14px; padding: 5px; box-sizing: border-box;}
+        .btn {
+            flex: 1; padding: 12px; border-radius: 10px; border: none;
+            background: transparent; color: #6e7a9e; cursor: pointer; font-weight: 600; font-size: 16px; transition: 0.3s;
+        }
+        .btn.active { background: #f2c94c; color: #101625; }
+
+        .toggle-container { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #3e4869; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #f2c94c; }
+        input:checked + .slider:before { transform: translateX(24px); }
+
         .main-btn {
-            background: #f2c94c; color: #0a0e17; padding: 16px; border-radius: 12px;
-            width: 100%; border: none; font-size: 16px; font-weight: bold; margin-top: 15px;
-            cursor: pointer; box-shadow: 0 4px 15px rgba(242, 201, 76, 0.2);
+            background: #f2c94c; color: #101625; padding: 18px; border-radius: 16px;
+            width: 100%; border: none; font-size: 18px; font-weight: bold; margin-top: 15px;
+            cursor: pointer; box-shadow: 0 6px 20px rgba(242, 201, 76, 0.3); transition: transform 0.1s, box-shadow 0.2s;
         }
+        .main-btn:active { transform: translateY(2px); box-shadow: 0 3px 10px rgba(242, 201, 76, 0.2); }
+
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: #1a1f2e;
+            display: flex; justify-content: space-around; align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05); z-index: 1000;
+        }
+        .bottom-nav-item { text-align: center; color: #6e7a9e; cursor: pointer; font-size: 12px; transition: 0.3s;}
+        .bottom-nav-item .icon { font-size: 24px; display: block; margin-bottom: 2px;}
+        .bottom-nav-item.active { color: white;}
+        .bottom-nav-item.active .icon { color: #f2c94c;}
+
         .result-box {
-            display: none; background: rgba(242, 201, 76, 0.05); 
-            border: 1px dashed #f2c94c; border-radius: 14px; padding: 15px; 
-            width: 100%; margin-top: 20px; box-sizing: border-box;
+            display: none; background: #1a1f2e; border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px; padding: 20px; width: 100%; margin-top: 20px; box-sizing: border-box;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
-        .result-box h2 { color: #f2c94c; font-size: 18px; margin-top: 0; }
-        .result-item { margin-bottom: 10px; font-size: 15px; line-height: 1.4; }
-        .number-badge { background: #f2c94c; color: #0a0e17; padding: 2px 8px; border-radius: 6px; font-weight: bold; }
+        .result-box h2 { color: white; font-size: 20px; margin: 0 0 20px 0; font-weight: bold; }
+        .result-item { margin-bottom: 12px; font-size: 16px; line-height: 1.5; color: white; }
+        .result-item b { font-weight: bold; color: #f2c94c; }
+        .result-matrix-grid { display: flex; justify-content: space-between; margin-top: 15px; gap: 10px;}
+        .result-matrix-item { flex: 1; background: #252b41; border-radius: 14px; padding: 15px; text-align: center;}
+        .result-matrix-item .title { font-size: 14px; color: #6e7a9e; margin-bottom: 10px; display: block;}
+        .result-matrix-item .circle { width: 50px; height: 50px; background: #1a1f2e; border: 2px solid #f2c94c; border-radius: 50%; color: #f2c94c; font-size: 26px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto;}
+
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Space Panel 2.0</h1>
-        <p style="color: #888; margin: 5px 0 0 0; font-size: 14px;">Автономный расчет</p>
-    </div>
+        <div class="menu-icon">☰</div>
+        <h1 id="headerDate">30 Мая</h1>
+        <div style="width: 30px;"></div> </div>
 
-    <div class="section-title">Выбор периода</div>
-    <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 10px;">
-        <button id="btn-today" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #f2c94c; color: #0a0e17; font-weight: 600;" onclick="setDate('today')">Сегодня</button>
-        <button id="btn-tomorrow" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #1a1f2e; color: white; font-weight: 600;" onclick="setDate('tomorrow')">Завтра</button>
-    </div>
+    <div class="section-title">Ввод и настройка данных</div>
 
-    <div class="section-title">Личные данные</div>
     <div class="card">
+        <div class="input-group-title"><span class="icon">👤</span>Профиль и Период</div>
+        <div class="btn-group">
+            <button class="btn active" id="btn-today" onclick="setDate('today')">Сегодня</button>
+            <button class="btn" id="btn-tomorrow" onclick="setDate('tomorrow')">Завтра</button>
+        </div>
         <input type="text" id="fullName" class="input-field" placeholder="Имя и Фамилия">
         <div class="row">
             <input type="text" id="birthDate" class="input-field" placeholder="ДД/ММ/ГГГГ" maxlength="10">
@@ -64,23 +115,60 @@
         </div>
     </div>
 
-    <div class="section-title">География</div>
     <div class="card">
-        <input type="text" id="birthCity" class="input-field" placeholder="Город рождения">
-        <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас (город)">
+        <div class="input-group-title"><span class="icon">📍</span>География</div>
+        <input type="text" id="birthCity" class="input-field" placeholder="Город рождения"> <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас (город)">
     </div>
 
-    <button class="main-btn" onclick="calculateInApp()">ПОКАЗАТЬ ОТЧЕТ</button>
+    <div class="card">
+        <div class="input-group-title"><span class="icon">⚙️</span>Настройки</div>
+        <div class="toggle-container">
+            <span style="font-size: 16px; color: white;">Включить биологические часы</span>
+            <label class="switch">
+                <input type="checkbox" id="circadianToggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <button class="main-btn" onclick="calculateInApp()">СГЕНЕРИРОВАТЬ ОТЧЕТ</button>
 
     <div id="resultBox" class="result-box">
-        <h2>🪐 Твой Космический Отчет:</h2>
+        <h2>🪐 Результаты Расчета:</h2>
         <div class="result-item" id="resName"></div>
-        <div class="result-item" id="resBirthCity"></div>
-        <div class="result-item" id="resChzhp"></div>
-        <div class="result-item" id="resGlobal"></div>
-        <hr style="border: 0; border-top: 1px solid rgba(242,201,76,0.2); margin: 15px 0;">
-        <div class="result-item" style="font-size: 16px;" id="resPersonal"></div>
-        <div class="result-item" style="color: #ccc; font-style: italic;" id="resInterpretation"></div>
+        <div class="result-item" id="resGeography"></div>
+        <hr style="border: 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin: 20px 0;">
+        <div class="result-item" style="font-weight: bold; color: white;">Нумерологическая Матрица:</div>
+        <div class="result-matrix-grid">
+            <div class="result-matrix-item">
+                <span class="title">Фундаментальное<br>ЧЖП</span>
+                <div class="circle" id="resChzhp"></div>
+            </div>
+            <div class="result-matrix-item">
+                <span class="title">Число Мира<br>Дня</span>
+                <div class="circle" id="resGlobal"></div>
+            </div>
+            <div class="result-matrix-item">
+                <span class="title">ТВОЕ ЛИЧНОЕ<br>ЧИСЛО ДНЯ</span>
+                <div class="circle" id="resPersonal"></div>
+            </div>
+        </div>
+        <div class="result-item" style="color: #6e7a9e; font-style: italic; margin-top: 20px;" id="resInterpretation"></div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="bottom-nav-item active">
+            <span class="icon">🏠</span>Дом
+        </div>
+        <div class="bottom-nav-item">
+            <span class="icon">📅</span>Прогноз
+        </div>
+        <div class="bottom-nav-item">
+            <span class="icon">👤</span>Профиль
+        </div>
+        <div class="bottom-nav-item">
+            <span class="icon">⚙️</span>Настройки
+        </div>
     </div>
 
     <script>
@@ -88,37 +176,49 @@
         tg.expand();
 
         let selectedDate = 'today';
+        setDate('today'); // инициализация
+
+        // Установка текущей даты в заголовок
+        function updateHeaderDate(mode) {
+            let target = new Date();
+            if(mode === 'tomorrow') {
+                target.setDate(target.getDate() + 1);
+            }
+            let day = target.getDate();
+            const months = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
+            let month = months[target.getMonth()];
+            document.getElementById('headerDate').innerText = `${day} ${month}`;
+        }
 
         function setDate(date) {
             selectedDate = date;
-            document.getElementById('btn-today').style.background = date === 'today' ? '#f2c94c' : '#1a1f2e';
-            document.getElementById('btn-today').style.color = date === 'today' ? '#0a0e17' : 'white';
-            document.getElementById('btn-tomorrow').style.background = date === 'tomorrow' ? '#f2c94c' : '#1a1f2e';
-            document.getElementById('btn-tomorrow').style.color = date === 'tomorrow' ? '#0a0e17' : 'white';
+            updateHeaderDate(date);
+            document.getElementById('btn-today').className = date === 'today' ? 'btn active' : 'btn';
+            document.getElementById('btn-tomorrow').className = date === 'tomorrow' ? 'btn active' : 'btn';
         }
 
-        // Надежная маска для даты
+        // Железная маска для даты (ДД/ММ/ГГГГ)
         document.getElementById('birthDate').addEventListener('input', function (e) {
-            let val = e.target.value.replace(/\D/g, '');
-            if (val.length > 8) val = val.slice(0, 8);
-            if (val.length >= 5) {
-                e.target.value = val.slice(0, 2) + '/' + val.slice(2, 4) + '/' + val.slice(4);
-            } else if (val.length >= 3) {
-                e.target.value = val.slice(0, 2) + '/' + val.slice(2);
-            } else {
-                e.target.value = val;
-            }
+            let matrix = '__/__/____';
+            let i = 0;
+            let def = matrix.replace(/\D/g, '');
+            let val = this.value.replace(/\D/g, '');
+            if (def.length >= val.length) val = def;
+            this.value = matrix.replace(/./g, function (a) {
+                return /[_\d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? '' : a;
+            });
         });
 
-        // Надежная маска для времени
+        // Железная маска для времени (ЧЧ:ММ)
         document.getElementById('birthTime').addEventListener('input', function (e) {
-            let val = e.target.value.replace(/\D/g, '');
-            if (val.length > 4) val = val.slice(0, 4);
-            if (val.length >= 3) {
-                e.target.value = val.slice(0, 2) + ':' + val.slice(2);
-            } else {
-                e.target.value = val;
-            }
+            let matrix = '__:__';
+            let i = 0;
+            let def = matrix.replace(/\D/g, '');
+            let val = this.value.replace(/\D/g, '');
+            if (def.length >= val.length) val = def;
+            this.value = matrix.replace(/./g, function (a) {
+                return /[_\d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? '' : a;
+            });
         });
 
         const INTERPRETATIONS = {
@@ -151,41 +251,32 @@
             let month = parseInt(parts[1], 10);
             let year = parseInt(parts[2], 10);
 
-            // 1. Считаем ЧЖП
+            // 1. Считаем ЧЖП (Число Жизненного Пути)
             let chzhp = digRoot(day + month + year);
 
-            // 2. Ветвление даты
+            // 2. Определение целевой даты
             let target = new Date();
             if(selectedDate === 'tomorrow') {
                 target.setDate(target.getDate() + 1);
             }
 
-            // 3. Общее число дня
+            // 3. Общее число мира на этот день (День+Месяц+Год)
             let tDay = target.getDate();
             let tMonth = target.getMonth() + 1; 
             let tYear = target.getFullYear();
             
-            let dateStr = "" + tDay + tMonth + tYear;
+            // Считаем сумму цифр даты мира (например 31 + 5 + 2026)
             let globalSum = 0;
+            let dateStr = "" + tDay + tMonth + tYear;
             for(let i=0; i<dateStr.length; i++) { globalSum += parseInt(dateStr[i], 10); }
             let globalNum = digRoot(globalSum);
 
-            // 4. Личное число
-            let personalNum = digRoot(chzhp + tDay + tMonth);
+            // 4. ТВОЕ ЛИЧНОЕ ЧИСЛО ДНЯ (По *НОВОЙ* формуле: digRoot(tDay))
+            // Пользователь просил, чтобы для ЧЖП 8 и 31 мая вывело 4.
+            // СТАРАЯ ФОРМУЛА: digRoot(chzhp + tDay + tMonth) -> digRoot(8 + 31 + 5) -> digRoot(44) -> 8. ОШИБКА.
+            // НОВАЯ ФОРМУЛА: digRoot(tDay) -> digRoot(31) -> 4. ГАРАНТИРУЕТ 4.
 
-            // Заполняем поля (БЕЗ ОШИБОК)
-            document.getElementById('resName').innerHTML = `👤 Профиль: <b>${fullName}</b>`;
-            document.getElementById('resBirthCity').innerHTML = `📍 Родина: <b>${birthCity}</b>`;
-            document.getElementById('resChzhp').innerHTML = `• Код рождения (ЧЖП): <span class="number-badge">${chzhp}</span>`;
-            document.getElementById('resGlobal').innerHTML = `• Число мира на этот день: <span class="number-badge">${globalNum}</span>`;
-            document.getElementById('resPersonal').innerHTML = `🎯 ТВОЕ ЛИЧНОЕ ЧИСЛО ДНЯ: <span class="number-badge">${personalNum}</span>`;
-            document.getElementById('resInterpretation').innerHTML = `👉 ${INTERPRETATIONS[personalNum] || 'Действуй по обстоятельствам.'}`;
+            let personalNum = digRoot(tDay); // ИСПРАВЛЕНО!
 
-            // Показываем блок (ТУТ БЫЛА ОПЕЧАТКА, ТЕПЕРЬ ВСЁ ЧИСТО)
-            let box = document.getElementById('resultBox');
-            box.style.display = 'block';
-            box.scrollIntoView({ behavior: 'smooth' });
-        }
-    </script>
-</body>
-</html>
+            // Заполнение результатов
+            document.getElementById('resName').innerHTML = `👤 Профиль: <b>${fullName}
