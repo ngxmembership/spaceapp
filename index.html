@@ -47,12 +47,17 @@
             background: #1a1f2e; color: white; cursor: pointer; font-weight: 600; font-size: 15px;
         }
         .btn.active { background: #f2c94c; color: #0a0e17; }
+        .main-btn {
+            background: #f2c94c; color: #0a0e17; padding: 16px; border-radius: 12px;
+            width: 100%; border: none; font-size: 16px; font-weight: bold; margin-top: 15px;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(242, 201, 76, 0.2);
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Space Panel 2.0</h1>
-        <p style="color: #888; margin: 5px 0 0 0; font-size: 14px;">Параметры расчета без лишних точек</p>
+        <p style="color: #888; margin: 5px 0 0 0; font-size: 14px;">Настрой параметры расчета</p>
     </div>
 
     <div class="section-title">Выбор периода</div>
@@ -65,15 +70,15 @@
     <div class="card">
         <input type="text" id="fullName" class="input-field" placeholder="Имя и Фамилия">
         <div class="row">
-            <input type="text" id="birthDate" class="input-field" placeholder="Только цифры: 14072003" maxlength="8">
-            <input type="text" id="birthTime" class="input-field" placeholder="Только цифры: 1930" maxlength="4">
+            <input type="text" id="birthDate" class="input-field" placeholder="ДД/ММ/ГГГГ" maxlength="10">
+            <input type="text" id="birthTime" class="input-field" placeholder="ЧЧ:ММ" maxlength="5">
         </div>
     </div>
 
     <div class="section-title">География</div>
     <div class="card">
-        <input type="text" id="birthCity" class="input-field" placeholder="Город рождения (например: Пермь)">
-        <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас (например: Санкт-Петербург)">
+        <input type="text" id="birthCity" class="input-field" placeholder="Город рождения">
+        <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас">
     </div>
 
     <div class="section-title">Дополнения</div>
@@ -87,14 +92,11 @@
         </div>
     </div>
 
+    <button class="main-btn" onclick="sendToBot()">СГЕНЕРИРОВАТЬ ОТЧЕТ</button>
+
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-
-        tg.MainButton.text = "СГЕНЕРИРОВАТЬ ОТЧЕТ";
-        tg.MainButton.textColor = "#0a0e17";
-        tg.MainButton.color = "#f2c94c";
-        tg.MainButton.show();
 
         let selectedDate = 'today';
 
@@ -104,40 +106,46 @@
             document.getElementById('btn-tomorrow').classList.toggle('active', date === 'tomorrow');
         }
 
-        tg.onEvent('mainButtonClicked', function() {
+        // Автоподстановка косых черт для даты (14072003 -> 14/07/2003)
+        document.getElementById('birthDate').addEventListener('input', function (e) {
+            let v = e.target.value.replace(/\D/g, '').v;
+            let val = e.target.value.replace(/\D/g, '');
+            if (val.length > 2) val = val.slice(0, 2) + '/' + val.slice(2);
+            if (val.length > 5) val = val.slice(0, 5) + '/' + val.slice(5, 9);
+            e.target.value = val;
+        });
+
+        // Автоподстановка двоеточия для времени (1930 -> 19:30)
+        document.getElementById('birthTime').addEventListener('input', function (e) {
+            let val = e.target.value.replace(/\D/g, '');
+            if (val.length > 2) val = val.slice(0, 2) + ':' + val.slice(2, 4);
+            e.target.value = val;
+        });
+
+        function sendToBot() {
             let fullName = document.getElementById('fullName').value.trim();
-            let rawDate = document.getElementById('birthDate').value.replace(/\D/g, '');
-            let rawTime = document.getElementById('birthTime').value.replace(/\D/g, '');
+            let birthDate = document.getElementById('birthDate').value.trim();
+            let birthTime = document.getElementById('birthTime').value.trim() || "00:00";
             let birthCity = document.getElementById('birthCity').value.trim() || "Не указан";
             let currentCity = document.getElementById('currentCity').value.trim();
             let showCircadian = document.getElementById('circadianToggle').checked ? "1" : "0";
 
-            if(!fullName || rawDate.length !== 8 || !currentCity) {
-                alert("Заполните Имя, Дату (8 цифр) и Текущий город!");
+            if(!fullName || birthDate.length < 10 || !currentCity) {
+                alert("Пожалуйста, заполните Имя, Дату рождения (ДД/ММ/ГГГГ) и Текущий город!");
                 return;
             }
 
-            // Магия: Автоматом превращаем "14072003" в "14.07.2003"
-            let birthDate = `${rawDate.substring(0,2)}.${rawDate.substring(2,4)}.${rawDate.substring(4,8)}`;
+            // Формируем текстовую команду с разделителями
+            let textCommand = `/run_calc ${selectedDate}||${fullName}||${birthDate}||${birthTime}||${birthCity}||${currentCity}||${showCircadian}`;
+
+            // Отправляем текстовую команду прямо в чат от лица юзера
+            tg.sendData(textCommand);
             
-            // Превращаем "1930" в "19:30"
-            let birthTime = "00:00";
-            if(rawTime.length === 4) {
-                birthTime = `${rawTime.substring(0,2)}:${rawTime.substring(2,4)}`;
-            }
-
-            let data = {
-                date: selectedDate,
-                full_name: fullName,
-                birth_date: birthDate,
-                birth_time: birthTime,
-                birth_city: birthCity,
-                current_city: currentCity,
-                show_circadian: showCircadian === "1"
-            };
-
-            tg.sendData(JSON.stringify(data));
-        });
+            // Запасной метод, если sendData намертво виснет в инлайн-режиме
+            setTimeout(() => {
+                tg.close();
+            }, 100);
+        }
     </script>
 </body>
 </html>
