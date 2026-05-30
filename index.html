@@ -80,6 +80,14 @@ input:checked + .slider:before{ transform:translateX(23px); }
 #modalBody .lead{ color:var(--gold); font-weight:700; margin-bottom:6px; }
 #modalBody .count{ margin-top:14px; padding:12px 14px; background:rgba(242,201,76,.1); border:1px solid rgba(242,201,76,.25); border-radius:14px; font-size:14px; }
 .modal-close{ width:100%; margin-top:22px; padding:15px; border:none; border-radius:14px; font-size:16px; font-weight:700; background:linear-gradient(90deg,var(--gold),#ffd86b); color:#0b1020; cursor:pointer; }
+.review .rv-intro{ color:var(--muted); font-size:13px; margin-bottom:14px; }
+.review h4{ font-size:15px; margin:18px 0 7px; color:var(--gold); }
+.review h4:first-child{ margin-top:0; }
+.review p{ font-size:14.5px; line-height:1.62; color:#e7ebff; margin:0 0 10px; }
+.review ul{ margin:4px 0 12px; padding-left:4px; list-style:none; }
+.review li{ font-size:14px; line-height:1.5; color:#dfe4ff; margin-bottom:7px; padding-left:24px; position:relative; }
+.review li:before{ content:"✦"; position:absolute; left:0; color:var(--accent); }
+.review .verdict{ margin-top:8px; padding:14px 16px; background:linear-gradient(180deg,rgba(138,123,255,.16),rgba(138,123,255,.06)); border:1px solid rgba(138,123,255,.3); border-radius:16px; font-size:14.5px; line-height:1.62; color:#fff; }
 </style>
 </head>
 <body>
@@ -148,6 +156,11 @@ input:checked + .slider:before{ transform:translateX(23px); }
     <div class="card">
         <div class="py-grid" id="pyGrid"></div>
         <div class="tap-hint">Нажми на ячейку, чтобы узнать значение</div>
+    </div>
+    <div class="section-title">Глубокий разбор</div>
+    <div class="card">
+        <div class="ig-title"><span class="icon">🔮</span>Космический разбор личности</div>
+        <div id="reviewBody" class="review"></div>
     </div>
 </div>
 <div class="bottom-nav">
@@ -329,7 +342,10 @@ function calculateInApp(silent) {
 
     let pyCounts = pythagoras(bd, bm, by);
     renderPythagoras(pyCounts);
-    window.__calc = { lifePath: lifePath, soul: soul, world: world, personal: personal, pyCounts: pyCounts };
+    let pYear = digRoot(bd + bm + ty);
+    window.__calc = { lifePath: lifePath, soul: soul, world: world, personal: personal, pyCounts: pyCounts, pYear: pYear };
+    saveProfile(f);
+    renderDeepReview(f, lifePath, soul, world, personal, pyCounts, pYear);
 
     if (!silent) {
         setTimeout(function () { document.getElementById('dash').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
@@ -466,6 +482,104 @@ function navTo(tab) {
         return;
     }
 }
+
+// ===================== СОХРАНЕНИЕ ПРОФИЛЯ =====================
+function saveProfile(f) {
+    try {
+        localStorage.setItem('cosmicProfile', JSON.stringify({
+            fullName: f.fullName, birthStr: f.birthStr, birthTime: f.birthTime,
+            birthCity: f.birthCity, currentCity: f.currentCity,
+            circadian: document.getElementById('circadianToggle').checked,
+            dateMode: selectedDate
+        }));
+    } catch (e) {}
+}
+function loadProfile() {
+    try {
+        let raw = localStorage.getItem('cosmicProfile');
+        if (!raw) return;
+        let s = JSON.parse(raw);
+        if (s.fullName) document.getElementById('fullName').value = s.fullName;
+        if (s.birthStr) document.getElementById('birthDate').value = s.birthStr;
+        if (s.birthTime && s.birthTime !== '00:00') document.getElementById('birthTime').value = s.birthTime;
+        if (s.birthCity && s.birthCity !== 'Не указан') document.getElementById('birthCity').value = s.birthCity;
+        if (s.currentCity) document.getElementById('currentCity').value = s.currentCity;
+        if (typeof s.circadian === 'boolean') document.getElementById('circadianToggle').checked = s.circadian;
+        if (s.fullName && s.birthStr && s.birthStr.length >= 10 && s.currentCity) {
+            calculateInApp(true);
+        }
+    } catch (e) {}
+}
+
+// ===================== ГЛУБОКИЙ РАЗБОР =====================
+const LIFE_PATH_DEEP = {
+    1: "Это прирождённый первопроходец. Сильная воля, амбиции и потребность быть первым. Лучшее раскрытие — там, где можно начинать, вести и не зависеть от чужого одобрения. Тень — упрямство и одиночество на вершине.",
+    2: "Это человек тонкой настройки: дипломат, миротворец, тот, кто чувствует других насквозь. Сила приходит через союзы, терпение и интуицию, а не через давление. Тень — зависимость от чужого мнения и страх конфликта.",
+    3: "Это канал творческой энергии: слово, образ, эмоция. Призвание — вдохновлять, выражать и делать мир ярче. Когда молчит и прячется — гаснет. Тень — распыление и поверхностность.",
+    4: "Это архитектор реальности: порядок, системность, труд. Строит то, что стоит десятилетиями, и служит опорой для других. Тень — ригидность, трудоголизм и страх перемен.",
+    5: "Это дух свободы и перемен. Жизнь — через движение, опыт, риск и многообразие. Запертый в рутину — задыхается. Тень — непостоянство и бегство от обязательств.",
+    6: "Это хранитель и опора рода. Любовь, забота, ответственность, красота и гармония. Призвание — служить близким и создавать тепло. Тень — гиперконтроль и жертвенность в ущерб себе.",
+    7: "Это мыслитель и искатель истины. Глубина, анализ, духовность и уединение. Сила — в знании и внутренней тишине. Тень — холодность, изоляция и недоверие к миру.",
+    8: "Это управленец и стратег масштаба. Власть, деньги, результат, большие системы. Рождён реализовывать замыслы в материи. Тень — жёсткость и одержимость контролем и статусом.",
+    9: "Это гуманист и завершатель циклов. Сострадание, отдача, широкий взгляд и служение многим. Призвание — отпускать старое и нести идеалы. Тень — мученичество и неумение брать для себя."
+};
+const PERSONAL_YEAR = {
+    1: "год старта нового 9-летнего цикла: семена, решения и смелые начинания, которые определят всё десятилетие.",
+    2: "год пауз, союзов и терпения: не время рывков, время договариваться, выстраивать связи и ждать всходов.",
+    3: "год расцвета, общения и самовыражения: удача любит активных, важно заявить о себе и творить.",
+    4: "год труда и фундамента: рутина, дисциплина и порядок, которые позже дадут опору. Без срезания углов.",
+    5: "год перемен и свободы: движение, риск и новые двери. Жёсткие планы ломаются — нужна гибкость.",
+    6: "год дома, любви и ответственности: семья, отношения, обязательства и забота выходят на первый план.",
+    7: "год погружения внутрь: анализ, обучение, уединение и духовный пересбор. Внешнее затихает.",
+    8: "год силы и результата: деньги, карьера, власть и большие решения. Что посеяно — то и собирается.",
+    9: "год завершения цикла: отпускание, итоги и расставание со старым. Освобождение места для нового витка."
+};
+
+function renderDeepReview(f, lifePath, soul, world, personal, pyCounts, pYear) {
+    let name = f.fullName;
+    let firstName = name.split(' ')[0];
+    let strong = [], weak = [];
+    for (let d = 1; d <= 9; d++) {
+        let c = pyCounts[d].length;
+        if (c >= 2) strong.push({ d: d, c: c });
+        if (c === 0) weak.push(d);
+    }
+    let h = '';
+    h += '<div class="rv-intro">Натальный код: Путь ' + lifePath + ' · Душа ' + soul + ' · Личный год ' + pYear + ' · Энергия дня ' + personal + '</div>';
+    h += '<h4>🧬 Ядро личности</h4>';
+    h += '<p>Перед нами <b>' + name + '</b> — человек Пути <b>' + lifePath + '</b>. ' + LIFE_PATH_DEEP[lifePath] + '</p>';
+    h += '<h4>💗 Внутренний двигатель</h4>';
+    h += '<p>В глубине — Число души <b>' + soul + '</b>. ' + SOUL[soul] + ' Именно это тихое желание управляет выборами, даже когда разум говорит иное.</p>';
+    h += '<h4>⚡ Сильные стороны</h4>';
+    if (strong.length) {
+        h += '<ul>';
+        strong.forEach(function (s) {
+            h += '<li><b>' + PY_INFO[s.d].name + '</b> (' + s.c + '×) — ' + PY_INFO[s.d].desc + '</li>';
+        });
+        h += '</ul>';
+    } else {
+        h += '<p>Ярко выраженных «сдвоенных» качеств нет — сила распределена ровно, без перекосов. Это гибкость, но без врождённого «тарана».</p>';
+    }
+    h += '<h4>🌱 Зоны роста</h4>';
+    if (weak.length) {
+        let wn = weak.map(function (d) { return PY_INFO[d].name; }).join(', ');
+        h += '<p>Не заполнены ячейки: <b>' + wn + '</b>. Это не приговор, а точки осознанной прокачки — именно здесь жизнь будет подкидывать уроки, пока качество не окрепнет.</p>';
+    } else {
+        h += '<p>Все девять ячеек заполнены — редкий случай целостной матрицы. Базовый потенциал раскрыт по всем линиям.</p>';
+    }
+    h += '<h4>🌀 Текущий период</h4>';
+    h += '<p>Сейчас ' + firstName + ' проживает <b>Личный год ' + pYear + '</b> — ' + PERSONAL_YEAR[pYear] + '</p>';
+    h += '<p>Энергия выбранного дня — число <b>' + personal + '</b>: ' + (INTERPRETATIONS[personal] || '') + '</p>';
+    h += '<h4>🔮 Вывод</h4>';
+    let verdict = 'Это путь ' + lifePath + '-ки с душой ' + soul + '-ки. ';
+    if (strong.length) { verdict += 'Главный ресурс — ' + PY_INFO[strong[0].d].name.toLowerCase() + '. '; }
+    if (weak.length) { verdict += 'Главный вызов — добрать ' + PY_INFO[weak[0]].name.toLowerCase() + '. '; }
+    verdict += 'В Личный год ' + pYear + ' — это ' + PERSONAL_YEAR[pYear] + ' Кто слышит свой код — идёт по течению силы. Кто игнорирует — идёт против него.';
+    h += '<div class="verdict">' + verdict + '</div>';
+    document.getElementById('reviewBody').innerHTML = h;
+}
+
+loadProfile();
 </script>
 </body>
 </html>
