@@ -14,31 +14,47 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-        }
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { font-size: 24px; margin: 0; color: #f2c94c; }
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(242, 201, 76, 0.2);
-            border-radius: 16px;
-            padding: 20px;
-            width: 100%;
-            margin-bottom: 15px;
             box-sizing: border-box;
         }
-        .toggle-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 24px; margin: 0; color: #f2c94c; }
+        
+        .section-title {
+            width: 100%; color: #f2c94c; font-size: 12px; font-weight: bold; 
+            letter-spacing: 1px; margin: 15px 0 8px 5px; text-transform: uppercase;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(242, 201, 76, 0.15);
+            border-radius: 14px;
+            padding: 15px;
             width: 100%;
+            margin-bottom: 10px;
+            box-sizing: border-box;
         }
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 26px;
+
+        .input-field {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+            color: white;
+            font-size: 16px;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+            outline: none;
         }
+        .input-field:focus { border-color: #f2c94c; }
+
+        .row { display: flex; gap: 10px; width: 100%; }
+        .row .input-field { flex: 1; }
+
+        .toggle-container {
+            display: flex; justify-content: space-between; align-items: center; width: 100%;
+        }
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
@@ -51,36 +67,56 @@
         input:checked + .slider { background-color: #f2c94c; }
         input:checked + .slider:before { transform: translateX(24px); }
 
-        .btn-group { display: flex; gap: 10px; width: 100%; margin-bottom: 20px; }
+        .btn-group { display: flex; gap: 10px; width: 100%; margin-bottom: 10px; }
         .btn {
             flex: 1; padding: 12px; border-radius: 10px; border: none;
-            background: #1a1f2e; color: white; cursor: pointer; font-weight: 600;
+            background: #1a1f2e; color: white; cursor: pointer; font-weight: 600; font-size: 15px;
         }
         .btn.active { background: #f2c94c; color: #0a0e17; }
         
         .main-btn {
-            background: #f2c94c; color: #0a0e17; padding: 15px; border-radius: 12px;
-            width: 100%; border: none; font-size: 18px; font-weight: bold; margin-top: 20px;
+            background: #f2c94c; color: #0a0e17; padding: 16px; border-radius: 12px;
+            width: 100%; border: none; font-size: 16px; font-weight: bold; margin-top: 15px;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(242, 201, 76, 0.2);
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Space Panel 2.0</h1>
-        <p style="color: #888;">Настрой свой прогноз</p>
+        <p style="color: #888; margin: 5px 0 0 0; font-size: 14px;">Настрой параметры расчета</p>
     </div>
 
+    <div class="section-title">Выбор периода</div>
     <div class="btn-group">
-        <button class="btn active" onclick="setDate('today')">Сегодня</button>
-        <button class="btn" onclick="setDate('tomorrow')">Завтра</button>
+        <button class="btn active" id="btn-today" onclick="setDate('today')">Сегодня</button>
+        <button class="btn" id="btn-tomorrow" onclick="setDate('tomorrow')">Завтра</button>
     </div>
 
-    <div class="toggle-container">
-        <span>Показывать биологические часы</span>
-        <label class="switch">
-            <input type="checkbox" id="circadianToggle" checked>
-            <span class="slider"></span>
-        </label>
+    <div class="section-title">Личные данные</div>
+    <div class="card">
+        <input type="text" id="fullName" class="input-field" placeholder="Имя и Фамилия (например: Сергей Морозов)">
+        <div class="row">
+            <input type="text" id="birthDate" class="input-field" placeholder="ДД.ММ.ГГГГ (14.07.2003)">
+            <input type="text" id="birthTime" class="input-field" placeholder="Время ЧЧ:ММ (19:30)">
+        </div>
+    </div>
+
+    <div class="section-title">География</div>
+    <div class="card">
+        <input type="text" id="birthCity" class="input-field" placeholder="Город рождения (например: Пермь)">
+        <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас (например: Санкт-Петербург)">
+    </div>
+
+    <div class="section-title">Дополнения</div>
+    <div class="card">
+        <div class="toggle-container">
+            <span style="font-size: 15px;">Включить биологические часы</span>
+            <label class="switch">
+                <input type="checkbox" id="circadianToggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
     </div>
 
     <button class="main-btn" onclick="sendToBot()">СГЕНЕРИРОВАТЬ ОТЧЕТ</button>
@@ -93,17 +129,35 @@
 
         function setDate(date) {
             selectedDate = date;
-            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+            document.getElementById('btn-today').classList.toggle('active', date === 'today');
+            document.getElementById('btn-tomorrow').classList.toggle('active', date === 'tomorrow');
         }
 
         function sendToBot() {
+            // Собираем всё, что ввел пользователь руками
             let data = {
                 date: selectedDate,
+                full_name: document.getElementById('fullName').value.strip ? document.getElementById('fullName').value.strip() : document.getElementById('fullName').value,
+                birth_date: document.getElementById('birthDate').value,
+                birth_time: document.getElementById('birthTime').value,
+                birth_city: document.getElementById('birthCity').value,
+                current_city: document.getElementById('currentCity').value,
                 show_circadian: document.getElementById('circadianToggle').checked
             };
+
+            // Проверка базового заполнения
+            if(!data.full_name || !data.birth_date || !data.current_city) {
+                alert("Пожалуйста, заполните Имя, Дату рождения и Текущий город!");
+                return;
+            }
+
+            // Отправляем пакет данных на Питон-сервер бота
             tg.sendData(JSON.stringify(data));
-            tg.close(); // Закрываем мини-приложение после отправки
+            
+            // Даем задержку в 300мс перед закрытием, чтобы данные железно улетели
+            setTimeout(() => {
+                tg.close();
+            }, 300);
         }
     </script>
 </body>
