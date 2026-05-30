@@ -66,6 +66,20 @@ input:checked + .slider:before{ transform:translateX(23px); }
 .nav-item{ text-align:center; color:var(--muted); font-size:11px; }
 .nav-item .icon{ font-size:22px; display:block; margin-bottom:2px; }
 .nav-item.active{ color:#fff; } .nav-item.active .icon{ filter:drop-shadow(0 0 8px var(--gold)); }
+.mini, .py-cell { cursor:pointer; transition:transform .15s, box-shadow .2s; }
+.mini:active, .py-cell:active { transform:scale(0.96); }
+.tap-hint { text-align:center; color:var(--muted); font-size:11px; margin-top:12px; opacity:.85; }
+.modal-overlay{ position:fixed; inset:0; background:rgba(5,8,18,0.72); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:none; align-items:flex-end; justify-content:center; z-index:200; }
+.modal-overlay.open{ display:flex; animation:fadeIn .25s ease; }
+@keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+.modal-card{ width:100%; max-width:520px; background:linear-gradient(180deg,#161c30,#0e1322); border:1px solid var(--line); border-top-left-radius:26px; border-top-right-radius:26px; padding:26px 22px 30px; box-shadow:0 -10px 40px rgba(0,0,0,0.5); animation:slideUp .3s cubic-bezier(.2,.8,.2,1); }
+@keyframes slideUp{ from{transform:translateY(60px); opacity:.5;} to{transform:none; opacity:1;} }
+.modal-emoji{ font-size:44px; text-align:center; margin-bottom:6px; }
+.modal-card h2{ font-size:22px; margin:0 0 12px; text-align:center; background:linear-gradient(90deg,#fff,#cdb4ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+#modalBody{ font-size:15px; line-height:1.6; color:#e7ebff; }
+#modalBody .lead{ color:var(--gold); font-weight:700; margin-bottom:6px; }
+#modalBody .count{ margin-top:14px; padding:12px 14px; background:rgba(242,201,76,.1); border:1px solid rgba(242,201,76,.25); border-radius:14px; font-size:14px; }
+.modal-close{ width:100%; margin-top:22px; padding:15px; border:none; border-radius:14px; font-size:16px; font-weight:700; background:linear-gradient(90deg,var(--gold),#ffd86b); color:#0b1020; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -124,21 +138,31 @@ input:checked + .slider:before{ transform:translateX(23px); }
     <div class="section-title">Нумерологическая матрица</div>
     <div class="card">
         <div class="mini-grid">
-            <div class="mini"><span class="t">Путь жизни</span><div class="c" id="mLife">—</div></div>
-            <div class="mini"><span class="t">Число души</span><div class="c" id="mSoul">—</div></div>
-            <div class="mini"><span class="t">Число мира</span><div class="c" id="mWorld">—</div></div>
+            <div class="mini" onclick="openLife()"><span class="t">Путь жизни</span><div class="c" id="mLife">—</div></div>
+            <div class="mini" onclick="openSoul()"><span class="t">Число души</span><div class="c" id="mSoul">—</div></div>
+            <div class="mini" onclick="openWorld()"><span class="t">Число мира</span><div class="c" id="mWorld">—</div></div>
         </div>
+        <div class="tap-hint">Нажми на любое число, чтобы узнать его значение</div>
     </div>
     <div class="section-title">Квадрат Пифагора</div>
     <div class="card">
         <div class="py-grid" id="pyGrid"></div>
+        <div class="tap-hint">Нажми на ячейку, чтобы узнать значение</div>
     </div>
 </div>
 <div class="bottom-nav">
-    <div class="nav-item active"><span class="icon">🏠</span>Дом</div>
-    <div class="nav-item"><span class="icon">📅</span>Прогноз</div>
-    <div class="nav-item"><span class="icon">👤</span>Профиль</div>
-    <div class="nav-item"><span class="icon">⚙️</span>Настройки</div>
+    <div class="nav-item active" id="nav-home" onclick="navTo('home')"><span class="icon">🏠</span>Дом</div>
+    <div class="nav-item" id="nav-forecast" onclick="navTo('forecast')"><span class="icon">📅</span>Прогноз</div>
+    <div class="nav-item" id="nav-profile" onclick="navTo('profile')"><span class="icon">👤</span>Профиль</div>
+    <div class="nav-item" id="nav-settings" onclick="navTo('settings')"><span class="icon">⚙️</span>Настройки</div>
+</div>
+<div id="modal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-emoji" id="modalEmoji">✨</div>
+        <h2 id="modalTitle"></h2>
+        <div id="modalBody"></div>
+        <button class="modal-close" onclick="closeModal()">Понятно</button>
+    </div>
 </div>
 <script>
 let tg = window.Telegram.WebApp;
@@ -259,7 +283,7 @@ function renderPythagoras(counts) {
     order.forEach(function (d, idx) {
         let v = counts[d];
         let full = v.length > 0;
-        out += '<div class="py-cell ' + (full ? 'full' : '') + '" style="animation-delay:' + (idx * 0.05) + 's">'
+        out += '<div class="py-cell ' + (full ? 'full' : '') + '" style="animation-delay:' + (idx * 0.05) + 's" onclick="openPy(' + d + ')">'
             + '<div class="py-digits ' + (full ? '' : 'empty') + '">' + (full ? v : '—') + '</div>'
             + '<div class="py-cap">' + d + ' · ' + PY_CAPS[d] + '</div></div>';
     });
@@ -269,6 +293,7 @@ function renderPythagoras(counts) {
 function calculateInApp(silent) {
     let f = readForm();
     if (!f) return;
+    window.__lastForm = f;
     let p = f.birthStr.split('/');
     let bd = parseInt(p[0], 10), bm = parseInt(p[1], 10), by = parseInt(p[2], 10);
     if (!bd || !bm || !by) { alert("Проверь дату рождения (ДД/ММ/ГГГГ)"); return; }
@@ -302,7 +327,9 @@ function calculateInApp(silent) {
     document.getElementById('mSoul').innerText = soul;
     document.getElementById('mWorld').innerText = world;
 
-    renderPythagoras(pythagoras(bd, bm, by));
+    let pyCounts = pythagoras(bd, bm, by);
+    renderPythagoras(pyCounts);
+    window.__calc = { lifePath: lifePath, soul: soul, world: world, personal: personal, pyCounts: pyCounts };
 
     if (!silent) {
         setTimeout(function () { document.getElementById('dash').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
@@ -317,6 +344,127 @@ function sendReportToBot() {
     // Формат: date_mode||имя||дата||время||город_рожд||город_сейчас||биочасы
     let payload = [selectedDate, f.fullName, f.birthStr, f.birthTime, f.birthCity, f.currentCity, circadian].join("||");
     tg.sendData(payload);
+}
+
+// ===================== ОПИСАНИЯ И ПОП-АПЫ =====================
+const LIFE_PATH = {
+    1: "Лидер. Твоё предназначение — идти первым, начинать новое и вести за собой. Сильная воля и независимость.",
+    2: "Дипломат. Гармония, партнёрство и тонкое чувствование людей. Сила в мягкости и сотрудничестве.",
+    3: "Творец. Самовыражение, общение, искусство. Несёшь радость и вдохновение другим.",
+    4: "Строитель. Порядок, дисциплина и надёжность. Создаёшь прочный фундамент через труд.",
+    5: "Искатель свободы. Перемены, путешествия и опыт. Живёшь через движение и многообразие.",
+    6: "Хранитель. Забота, семья, ответственность и красота. Служение близким и гармония.",
+    7: "Мыслитель. Анализ, духовность и знания. Путь внутреннего поиска и мудрости.",
+    8: "Управленец. Власть, финансы, масштаб и результат. Материальная реализация и сила.",
+    9: "Гуманист. Сострадание, отдача и завершение циклов. Служение миру и высокие идеалы."
+};
+const SOUL = {
+    1: "Душа хочет быть собой, проявлять индивидуальность и независимость.",
+    2: "Душа жаждет любви, гармонии и близких отношений.",
+    3: "Душе нужно творчество, радость и свободное самовыражение.",
+    4: "Душа стремится к стабильности, порядку и надёжности.",
+    5: "Душа жаждет свободы, приключений и новых впечатлений.",
+    6: "Душа хочет любить и заботиться, создавать уют и красоту.",
+    7: "Душе нужны уединение, познание и духовная глубина.",
+    8: "Душа стремится к достижениям, влиянию и изобилию.",
+    9: "Душа хочет помогать, отдавать и служить большему, чем она сама."
+};
+const WORLD = {
+    1: "День стартов и инициатив для всего мира — общая энергия начала.",
+    2: "День сотрудничества, переговоров и мягких решений.",
+    3: "День общения, лёгкости, творчества и радости.",
+    4: "День труда, дисциплины и наведения порядка.",
+    5: "День перемен, движения и неожиданностей.",
+    6: "День заботы, дома, любви и ответственности.",
+    7: "День тишины, анализа и духовности.",
+    8: "День дел, финансов и больших решений.",
+    9: "День завершений, итогов и великодушия."
+};
+const PY_INFO = {
+    1: { name: "Характер", desc: "Сила воли, эго, умение настоять на своём." },
+    2: { name: "Энергия", desc: "Биоэнергетика, харизма, запас жизненных сил." },
+    3: { name: "Талант", desc: "Интерес к точным наукам, технике и аккуратность." },
+    4: { name: "Здоровье", desc: "Физическая крепость и выносливость организма." },
+    5: { name: "Логика", desc: "Логика, интуиция и чувство момента." },
+    6: { name: "Труд", desc: "Склонность к труду, мастерство руками, заземлённость." },
+    7: { name: "Удача", desc: "Везение, талант и поддержка ангела-хранителя." },
+    8: { name: "Долг", desc: "Чувство долга, доброта и ответственность перед близкими." },
+    9: { name: "Память", desc: "Память, ум и способность к обучению." }
+};
+
+function countMeaning(n) {
+    if (n <= 0) return "Этой цифры у тебя нет — качество выражено слабо, его стоит осознанно развивать.";
+    if (n === 1) return "1 цифра — качество выражено умеренно, в пределах нормы.";
+    if (n === 2) return "2 цифры — качество выражено хорошо, это твоя заметная сила.";
+    if (n === 3) return "3 цифры — качество выражено сильно.";
+    return n + " цифр — качество выражено очень мощно, это доминирующая черта.";
+}
+
+function openModal(emoji, title, bodyHtml) {
+    document.getElementById('modalEmoji').innerText = emoji;
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('modalBody').innerHTML = bodyHtml;
+    document.getElementById('modal').classList.add('open');
+}
+function closeModal(e) {
+    document.getElementById('modal').classList.remove('open');
+}
+
+function needCalc() {
+    if (!window.__calc) { alert("Сначала нажми «✨ РАССЧИТАТЬ»"); return true; }
+    return false;
+}
+function openLife() {
+    if (needCalc()) return;
+    let v = window.__calc.lifePath;
+    openModal("🛤️", "Путь жизни: " + v, '<div class="lead">Число ' + v + '</div>' + LIFE_PATH[v]);
+}
+function openSoul() {
+    if (needCalc()) return;
+    let v = window.__calc.soul;
+    openModal("💗", "Число души: " + v, '<div class="lead">Число ' + v + '</div>' + SOUL[v]);
+}
+function openWorld() {
+    if (needCalc()) return;
+    let v = window.__calc.world;
+    openModal("🌍", "Число мира: " + v, '<div class="lead">Число ' + v + '</div>' + WORLD[v]);
+}
+function openPy(d) {
+    if (needCalc()) return;
+    let cnt = window.__calc.pyCounts[d].length;
+    let info = PY_INFO[d];
+    openModal("🔲", info.name + " (цифра " + d + ")",
+        '<div class="lead">' + info.name + '</div>' + info.desc +
+        '<div class="count">' + countMeaning(cnt) + '</div>');
+}
+
+function navTo(tab) {
+    ['home', 'forecast', 'profile', 'settings'].forEach(function (t) {
+        document.getElementById('nav-' + t).className = (t === tab) ? 'nav-item active' : 'nav-item';
+    });
+    if (tab === 'home') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+    if (tab === 'forecast') {
+        if (!window.__calc) { openModal("📅", "Прогноз", "Сначала нажми «✨ РАССЧИТАТЬ» — и здесь появится прогноз на день."); return; }
+        let p = window.__calc.personal;
+        openModal("📅", "Прогноз на день", '<div class="lead">Число дня: ' + p + '</div>' + (INTERPRETATIONS[p] || '') +
+            '<div class="count">Совет: сверься с биоритмами выше — если они на подъёме (▲), смело берись за важное.</div>');
+        return;
+    }
+    if (tab === 'profile') {
+        let f = window.__lastForm || null;
+        if (!f) { openModal("👤", "Профиль", "Заполни данные и нажми «✨ РАССЧИТАТЬ» — здесь сохранится твой профиль."); return; }
+        openModal("👤", "Профиль", '<div class="lead">' + f.fullName + '</div>' +
+            'Дата рождения: <b>' + f.birthStr + '</b><br>Время: <b>' + f.birthTime + '</b><br>Город рождения: <b>' + f.birthCity + '</b><br>Сейчас в: <b>' + f.currentCity + '</b>');
+        return;
+    }
+    if (tab === 'settings') {
+        let on = document.getElementById('circadianToggle').checked;
+        openModal("⚙️", "Настройки", 'Биологические часы в отчёте для чата: <b>' + (on ? 'включены' : 'выключены') + '</b>.<br><br>Переключатель находится в карточке ввода данных вверху.');
+        return;
+    }
 }
 </script>
 </body>
