@@ -92,7 +92,7 @@
         </div>
     </div>
 
-    <button class="main-btn" onclick="sendToBot()">СГЕНЕРИРОВАТЬ ОТЧЕТ</button>
+    <button class="main-btn" onclick="sendToBot()">СКОПИРОВАТЬ ДАННЫЕ</button>
 
     <script>
         let tg = window.Telegram.WebApp;
@@ -106,16 +106,15 @@
             document.getElementById('btn-tomorrow').classList.toggle('active', date === 'tomorrow');
         }
 
-        // Автоподстановка косых черт для даты (14072003 -> 14/07/2003)
+        // Автоподстановка косых черт для даты
         document.getElementById('birthDate').addEventListener('input', function (e) {
-            let v = e.target.value.replace(/\D/g, '').v;
             let val = e.target.value.replace(/\D/g, '');
             if (val.length > 2) val = val.slice(0, 2) + '/' + val.slice(2);
             if (val.length > 5) val = val.slice(0, 5) + '/' + val.slice(5, 9);
             e.target.value = val;
         });
 
-        // Автоподстановка двоеточия для времени (1930 -> 19:30)
+        // Автоподстановка двоеточия для времени
         document.getElementById('birthTime').addEventListener('input', function (e) {
             let val = e.target.value.replace(/\D/g, '');
             if (val.length > 2) val = val.slice(0, 2) + ':' + val.slice(2, 4);
@@ -131,20 +130,23 @@
             let showCircadian = document.getElementById('circadianToggle').checked ? "1" : "0";
 
             if(!fullName || birthDate.length < 10 || !currentCity) {
-                alert("Пожалуйста, заполните Имя, Дату рождения (ДД/ММ/ГГГГ) и Текущий город!");
+                alert("Пожалуйста, заполните Имя, Дату рождения и Текущий город!");
                 return;
             }
 
-            // Формируем текстовую команду с разделителями
             let textCommand = `/run_calc ${selectedDate}||${fullName}||${birthDate}||${birthTime}||${birthCity}||${currentCity}||${showCircadian}`;
 
-            // Отправляем текстовую команду прямо в чат от лица юзера
-            tg.sendData(textCommand);
-            
-            // Запасной метод, если sendData намертво виснет в инлайн-режиме
-            setTimeout(() => {
-                tg.close();
-            }, 100);
+            // Копируем сгенерированную команду в буфер обмена телефона/компа
+            let dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = textCommand;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            // Показываем четкое уведомление
+            alert("✅ Данные скопированы! Закрой панель, вставь текст в чат бота и отправь.");
+            tg.close();
         }
     </script>
 </body>
