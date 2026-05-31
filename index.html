@@ -72,13 +72,18 @@ input:checked + .slider:before{ transform:translateX(23px); }
 .modal-overlay{ position:fixed; inset:0; background:rgba(5,8,18,0.72); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:none; align-items:flex-end; justify-content:center; z-index:200; }
 .modal-overlay.open{ display:flex; animation:fadeIn .25s ease; }
 @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
-.modal-card{ width:100%; max-width:520px; background:linear-gradient(180deg,#161c30,#0e1322); border:1px solid var(--line); border-top-left-radius:26px; border-top-right-radius:26px; padding:26px 22px 30px; box-shadow:0 -10px 40px rgba(0,0,0,0.5); animation:slideUp .3s cubic-bezier(.2,.8,.2,1); }
+.modal-card{ width:100%; max-width:520px; max-height:85vh; overflow-y:auto; background:linear-gradient(180deg,#161c30,#0e1322); border:1px solid var(--line); border-top-left-radius:26px; border-top-right-radius:26px; padding:26px 22px 30px; box-shadow:0 -10px 40px rgba(0,0,0,0.5); animation:slideUp .3s cubic-bezier(.2,.8,.2,1); }
 @keyframes slideUp{ from{transform:translateY(60px); opacity:.5;} to{transform:none; opacity:1;} }
 .modal-emoji{ font-size:44px; text-align:center; margin-bottom:6px; }
 .modal-card h2{ font-size:22px; margin:0 0 12px; text-align:center; background:linear-gradient(90deg,#fff,#cdb4ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
 #modalBody{ font-size:15px; line-height:1.6; color:#e7ebff; }
 #modalBody .lead{ color:var(--gold); font-weight:700; margin-bottom:6px; }
 #modalBody .count{ margin-top:14px; padding:12px 14px; background:rgba(242,201,76,.1); border:1px solid rgba(242,201,76,.25); border-radius:14px; font-size:14px; }
+#modalBody h4{ color:var(--gold); font-size:14px; margin:16px 0 6px; }
+#modalBody p{ margin:0 0 10px; line-height:1.6; }
+.send-row{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.send-row .send-btn{ margin-top:0; }
+.send-hint{ text-align:center; color:var(--muted); font-size:11px; margin-top:8px; opacity:.85; }
 .modal-close{ width:100%; margin-top:22px; padding:15px; border:none; border-radius:14px; font-size:16px; font-weight:700; background:linear-gradient(90deg,var(--gold),#ffd86b); color:#0b1020; cursor:pointer; }
 .review .rv-intro{ color:var(--muted); font-size:13px; margin-bottom:14px; }
 .review h4{ font-size:15px; margin:18px 0 7px; color:var(--gold); }
@@ -117,7 +122,12 @@ input:checked + .slider:before{ transform:translateX(23px); }
     </div>
 </div>
 <button class="main-btn" onclick="calculateInApp()">✨ РАССЧИТАТЬ</button>
-<button class="send-btn" onclick="sendReportToBot()">📩 Полный отчёт в чат</button>
+<div class="send-row">
+    <button class="send-btn" onclick="sendReport('person')">🧑 О человеке — портрет личности</button>
+    <button class="send-btn" onclick="sendReport('planets')">🪐 По планетам — простым языком</button>
+    <button class="send-btn" onclick="sendReport('forecast')">📅 Прогноз на день</button>
+</div>
+<div class="send-hint">Отчёт придёт в чат с ботом. Открой приложение через кнопку «🚀 ОТКРЫТЬ ПУЛЬТ» в Telegram.</div>
 <div id="dash">
     <div class="section-title">Биоритмы на выбранный день</div>
     <div class="card">
@@ -352,14 +362,19 @@ function calculateInApp(silent) {
     }
 }
 
-// Отправка боту -> полный отчёт (планеты, рассвет/закат) придёт в чат
-function sendReportToBot() {
+// Отправка боту -> развёрнутый отчёт придёт в чат. type: person | planets | forecast
+function sendReport(type) {
     let f = readForm();
     if (!f) return;
+    saveProfile(f);
     let circadian = document.getElementById('circadianToggle').checked ? "1" : "0";
-    // Формат: date_mode||имя||дата||время||город_рожд||город_сейчас||биочасы
-    let payload = [selectedDate, f.fullName, f.birthStr, f.birthTime, f.birthCity, f.currentCity, circadian].join("||");
-    tg.sendData(payload);
+    // Формат: type||date_mode||имя||дата||время||город_рожд||город_сейчас||биочасы
+    let payload = [type, selectedDate, f.fullName, f.birthStr, f.birthTime, f.birthCity, f.currentCity, circadian].join("||");
+    if (tg && typeof tg.sendData === 'function') {
+        tg.sendData(payload);
+    } else {
+        alert("Открой приложение через кнопку «🚀 ОТКРЫТЬ ПУЛЬТ» в Telegram — тогда отчёт придёт в чат.");
+    }
 }
 
 // ===================== ОПИСАНИЯ И ПОП-АПЫ =====================
@@ -416,6 +431,40 @@ function countMeaning(n) {
     return n + " цифр — качество выражено очень мощно, это доминирующая черта.";
 }
 
+const LIFE_PURPOSE = {
+    1: "Научиться быть первым и самостоятельным, прокладывать путь и брать ответственность за старт.",
+    2: "Создавать гармонию и партнёрство, быть мостом между людьми и сглаживать острые углы.",
+    3: "Дарить миру творчество и радость, вдохновлять словом, образом и эмоцией.",
+    4: "Строить надёжные системы и порядок, на которые смогут опереться другие.",
+    5: "Познавать жизнь через свободу, опыт и перемены, расширять границы возможного.",
+    6: "Заботиться, любить и нести ответственность за дом, семью и красоту вокруг.",
+    7: "Искать истину и глубину, развивать мудрость и делиться знанием.",
+    8: "Управлять ресурсами и людьми, реализовывать большое в материальном мире.",
+    9: "Служить людям и идеалам, отдавать, прощать и завершать циклы."
+};
+const LIFE_PATH_LONG = {
+    1: "Ты здесь, чтобы развить волю и самостоятельность. Раскрываешься, когда сам принимаешь решения и не боишься быть первым; гаснешь, когда подстраиваешься под других.",
+    2: "Твоя сила — в чуткости и умении соединять людей. Учишься ценить себя так же, как ценишь других, и не растворяться в чужих ожиданиях.",
+    3: "Ты — источник идей, эмоций и вдохновения. Когда позволяешь себе открыто выражаться, жизнь расцветает; когда прячешь чувства — накрывает тоска.",
+    4: "Ты строишь то, что переживёт годы: системы, дом, репутацию. Учишься гибкости, чтобы дисциплина не превратилась в клетку.",
+    5: "Тебе нужны движение, новизна и свобода выбора. Урок — направлять энергию перемен, а не растрачивать её на хаос и бегство.",
+    6: "Ты создан для любви, заботы и ответственности за близких. Важно помогать без жертвенности и не контролировать тех, кого любишь.",
+    7: "Твой путь — вглубь: знания, анализ, духовность. Сила приходит в тишине, но не превращай уединение в стену между собой и миром.",
+    8: "Ты пришёл управлять, масштабировать и достигать результата в материальном мире. Урок — использовать власть и деньги честно, без жёсткости и страха потерь.",
+    9: "Ты завершаешь циклы и служишь большему, чем ты сам. Учишься отдавать из полноты, а не из чувства долга, и беречь себя."
+};
+const SOUL_LONG = {
+    1: "В глубине ты хочешь быть собой и идти своим путём. Тебе важно чувствовать, что ты — автор своей жизни.",
+    2: "Душа тянется к близости, теплу и согласию. Тебе нужно быть нужным и любимым по-настоящему.",
+    3: "Внутри живёт жажда творить и делиться радостью. Тебе важно, чтобы тебя видели и слышали.",
+    4: "Душа ищет опору, стабильность и предсказуемость. Покой приходит, когда всё на своих местах.",
+    5: "В глубине — зов свободы и новых впечатлений. Тебе тесно там, где нет воздуха и выбора.",
+    6: "Душа хочет любить, заботиться и создавать красоту вокруг. Дом и близкие — твоя главная ценность.",
+    7: "Внутри — потребность в тишине, смысле и глубине. Тебе важно понимать суть вещей.",
+    8: "Душа стремится к силе, влиянию и достатку. Тебе важно ощущать масштаб и значимость своих дел.",
+    9: "В глубине — желание помогать и служить миру. Тебя греет ощущение, что ты делаешь жизнь лучше."
+};
+
 function openModal(emoji, title, bodyHtml) {
     document.getElementById('modalEmoji').innerText = emoji;
     document.getElementById('modalTitle').innerText = title;
@@ -433,12 +482,17 @@ function needCalc() {
 function openLife() {
     if (needCalc()) return;
     let v = window.__calc.lifePath;
-    openModal("🛤️", "Путь жизни: " + v, '<div class="lead">Число ' + v + '</div>' + LIFE_PATH[v]);
+    openModal("🛤️", "Путь жизни: " + v,
+        '<div class="lead">' + LIFE_PATH[v] + '</div>' +
+        '<h4>🎯 Предназначение</h4><p>' + LIFE_PURPOSE[v] + '</p>' +
+        '<h4>📖 Подробнее</h4><p>' + LIFE_PATH_LONG[v] + '</p>');
 }
 function openSoul() {
     if (needCalc()) return;
     let v = window.__calc.soul;
-    openModal("💗", "Число души: " + v, '<div class="lead">Число ' + v + '</div>' + SOUL[v]);
+    openModal("💗", "Число души: " + v,
+        '<div class="lead">' + SOUL[v] + '</div>' +
+        '<h4>📖 Подробнее</h4><p>' + SOUL_LONG[v] + '</p>');
 }
 function openWorld() {
     if (needCalc()) return;
@@ -535,6 +589,42 @@ const PERSONAL_YEAR = {
     9: "год завершения цикла: отпускание, итоги и расставание со старым. Освобождение места для нового витка."
 };
 
+const CHALLENGE = {
+    0: "Главный вызов — баланс и принятие. Учишься действовать без страха быть собой, не подстраиваясь под всех.",
+    1: "Вызов — отстаивать себя. Развивай волю и независимость, не позволяй другим решать за тебя.",
+    2: "Вызов — чувствительность. Учись не зависеть от чужого мнения и не бояться конфликтов.",
+    3: "Вызов — самовыражение. Преодолей страх критики, разреши себе говорить и творить открыто.",
+    4: "Вызов — дисциплина. Учись доводить до конца и не бежать от рутинной, но важной работы.",
+    5: "Вызов — свобода без хаоса. Учись управлять переменами, а не быть их заложником.",
+    6: "Вызов — ответственность и границы. Помогай близким, но не растворяйся в них полностью.",
+    7: "Вызов — доверие. Не прячься в изоляции и анализе, открывайся миру и людям.",
+    8: "Вызов — отношения с властью и деньгами. Учись использовать силу честно, без давления и страха."
+};
+const KABBALAH = {
+    1: "Маг — воля, начало, концентрация силы.",
+    2: "Жрица — интуиция, тайна, внутреннее знание.",
+    3: "Императрица — творчество, изобилие, забота.",
+    4: "Император — структура, власть, порядок.",
+    5: "Иерофант — традиция, учение, наставничество.",
+    6: "Влюблённые — выбор, союз, гармония.",
+    7: "Колесница — воля к победе, движение, контроль.",
+    8: "Сила — внутренняя мощь, мягкое укрощение.",
+    9: "Отшельник — мудрость, уединение, поиск истины.",
+    10: "Колесо — судьба, циклы, поворот удачи.",
+    11: "Справедливость — равновесие, честность, закон причин.",
+    12: "Повешенный — смена взгляда, жертва ради прозрения.",
+    13: "Смерть — трансформация, завершение, обновление.",
+    14: "Умеренность — баланс, исцеление, золотая середина.",
+    15: "Дьявол — соблазн, материя, теневые привязки.",
+    16: "Башня — внезапный слом иллюзий, освобождение.",
+    17: "Звезда — надежда, вдохновение, исцеляющий свет.",
+    18: "Луна — подсознание, иллюзии, глубинные страхи.",
+    19: "Солнце — радость, успех, ясность и тепло.",
+    20: "Суд — пробуждение, призвание, переоценка.",
+    21: "Мир — завершение, целостность, исполнение.",
+    22: "Шут — чистый потенциал, свобода, новый старт."
+};
+
 function renderDeepReview(f, lifePath, soul, world, personal, pyCounts, pYear) {
     let name = f.fullName;
     let firstName = name.split(' ')[0];
@@ -570,6 +660,17 @@ function renderDeepReview(f, lifePath, soul, world, personal, pyCounts, pYear) {
     h += '<h4>🌀 Текущий период</h4>';
     h += '<p>Сейчас ' + firstName + ' проживает <b>Личный год ' + pYear + '</b> — ' + PERSONAL_YEAR[pYear] + '</p>';
     h += '<p>Энергия выбранного дня — число <b>' + personal + '</b>: ' + (INTERPRETATIONS[personal] || '') + '</p>';
+    // Число вызова и каббала
+    let bp = f.birthStr.split('/');
+    let _bd = parseInt(bp[0], 10), _bm = parseInt(bp[1], 10), _by = parseInt(bp[2], 10);
+    let challenge = Math.abs(digRoot(_bd) - digRoot(_bm));
+    let kabSum = (String(_bd) + String(_bm) + String(_by)).split('').reduce(function (a, b) { return a + Number(b); }, 0);
+    while (kabSum > 22) kabSum -= 22;
+    if (kabSum < 1) kabSum = 22;
+    h += '<h4>⚔️ Число вызова: ' + challenge + '</h4>';
+    h += '<p>' + CHALLENGE[challenge] + '</p>';
+    h += '<h4>🔯 Каббалистическое число: ' + kabSum + '</h4>';
+    h += '<p>' + KABBALAH[kabSum] + ' <span style="opacity:.7">(путь по древу Сефирот, 1–22)</span></p>';
     h += '<h4>🔮 Вывод</h4>';
     let verdict = 'Это путь ' + lifePath + '-ки с душой ' + soul + '-ки. ';
     if (strong.length) { verdict += 'Главный ресурс — ' + PY_INFO[strong[0].d].name.toLowerCase() + '. '; }
