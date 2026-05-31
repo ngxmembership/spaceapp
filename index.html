@@ -93,12 +93,38 @@ input:checked + .slider:before{ transform:translateX(23px); }
 .review li{ font-size:14px; line-height:1.5; color:#dfe4ff; margin-bottom:7px; padding-left:24px; position:relative; }
 .review li:before{ content:"✦"; position:absolute; left:0; color:var(--accent); }
 .review .verdict{ margin-top:8px; padding:14px 16px; background:linear-gradient(180deg,rgba(138,123,255,.16),rgba(138,123,255,.06)); border:1px solid rgba(138,123,255,.3); border-radius:16px; font-size:14.5px; line-height:1.62; color:#fff; }
+/* --- Натальная карта, меню, автоподсказки --- */
+.drawer-overlay{ position:fixed; inset:0; background:rgba(5,8,18,0.6); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); display:none; z-index:300; }
+.drawer-overlay.open{ display:block; animation:fadeIn .2s ease; }
+.drawer-panel{ position:absolute; top:0; left:0; height:100%; width:80%; max-width:320px; background:linear-gradient(180deg,#141a2e,#0b0f1c); border-right:1px solid var(--line); padding:26px 18px; box-shadow:6px 0 30px rgba(0,0,0,.5); transform:translateX(-100%); animation:drawerIn .28s forwards cubic-bezier(.2,.8,.2,1); overflow-y:auto; }
+@keyframes drawerIn{ to{ transform:none; } }
+.drawer-title{ font-size:20px; font-weight:800; margin-bottom:18px; background:linear-gradient(90deg,#fff,#cdb4ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.drawer-item{ display:flex; align-items:center; gap:12px; padding:14px 12px; border-radius:14px; font-size:16px; color:#e7ebff; margin-bottom:6px; cursor:pointer; transition:background .2s; }
+.drawer-item:active{ background:rgba(138,123,255,.18); }
+.drawer-item span{ font-size:20px; }
+.drawer-item em{ margin-left:auto; font-style:normal; font-size:11px; color:#0b1020; background:var(--gold); padding:2px 8px; border-radius:20px; }
+.menu{ cursor:pointer; }
+.ac-wrap{ position:relative; }
+.ac-list{ position:absolute; left:0; right:0; top:100%; margin-top:-6px; background:#1a2138; border:1px solid var(--line); border-radius:12px; z-index:120; max-height:210px; overflow-y:auto; display:none; box-shadow:0 12px 28px rgba(0,0,0,.45); }
+.ac-list.open{ display:block; }
+.ac-item{ padding:11px 14px; font-size:15px; color:#e7ebff; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05); }
+.ac-item:last-child{ border-bottom:none; }
+.ac-item:active{ background:rgba(242,201,76,.15); }
+.ac-item small{ color:var(--muted); margin-left:6px; }
+.natal-wheel{ width:100%; max-width:340px; height:auto; margin:0 auto; display:block; }
+.natal-wheel .sign-glyph{ font-size:13px; fill:#cdb4ff; }
+.natal-wheel .planet-glyph{ font-size:15px; fill:#ffe9a6; font-weight:bold; }
+.natal-wheel .grid-line{ stroke:rgba(255,255,255,.10); stroke-width:1; }
+.natal-wheel .asc-line{ stroke:var(--gold); stroke-width:2; }
+.natal-wheel .ring-c{ fill:none; stroke:rgba(255,255,255,.18); stroke-width:1.5; }
+.natal-legend{ font-size:13px; line-height:1.7; color:#dfe4ff; margin-top:10px; text-align:center; }
+.natal-legend b{ color:#ffe9a6; }
 </style>
 </head>
 <body>
 <canvas id="stars"></canvas>
 <div class="header">
-    <div class="menu">☰</div>
+    <div class="menu" onclick="openDrawer()">☰</div>
     <h1 id="headerDate">Космос</h1>
     <div class="spark">✨</div>
 </div>
@@ -114,8 +140,14 @@ input:checked + .slider:before{ transform:translateX(23px); }
         <input type="text" id="birthDate" class="input-field" placeholder="ДД/ММ/ГГГГ" maxlength="10" inputmode="numeric">
         <input type="text" id="birthTime" class="input-field" placeholder="ЧЧ:ММ" maxlength="5" inputmode="numeric">
     </div>
-    <input type="text" id="birthCity" class="input-field" placeholder="Город рождения (необяз.)">
-    <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас">
+    <div class="ac-wrap">
+        <input type="text" id="birthCity" class="input-field" placeholder="Город рождения (для карты)" autocomplete="off">
+        <div class="ac-list" id="ac-birthCity"></div>
+    </div>
+    <div class="ac-wrap">
+        <input type="text" id="currentCity" class="input-field" placeholder="Где вы сейчас" autocomplete="off">
+        <div class="ac-list" id="ac-currentCity"></div>
+    </div>
     <div class="toggle-row">
         <span style="font-size:15px;">Биочасы в отчёте для чата</span>
         <label class="switch"><input type="checkbox" id="circadianToggle" checked><span class="slider"></span></label>
@@ -194,6 +226,20 @@ input:checked + .slider:before{ transform:translateX(23px); }
         <div class="ig-title"><span class="icon">🔮</span>Космический разбор личности</div>
         <div id="reviewBody" class="review"></div>
     </div>
+    <div class="section-title">Натальная карта</div>
+    <div class="card" id="natalCard">
+        <div class="ig-title"><span class="icon">🪐</span>Твоя карта неба</div>
+        <div id="natalWheel" style="text-align:center;"></div>
+        <div id="natalMeta" class="natal-legend"></div>
+        <div class="btn-group" style="margin-top:14px; flex-wrap:wrap;">
+            <button class="btn active" id="ntab-signs" onclick="natalTab('signs')">В знаках</button>
+            <button class="btn" id="ntab-houses" onclick="natalTab('houses')">Дома</button>
+            <button class="btn" id="ntab-inhouse" onclick="natalTab('inhouse')">В домах</button>
+            <button class="btn" id="ntab-aspects" onclick="natalTab('aspects')">Аспекты</button>
+        </div>
+        <div id="natalBody" class="review"></div>
+        <div class="tap-hint" id="natalNote"></div>
+    </div>
 </div>
 <div class="bottom-nav">
     <div class="nav-item active" id="nav-home" onclick="navTo('home')"><span class="icon">🏠</span>Дом</div>
@@ -201,6 +247,17 @@ input:checked + .slider:before{ transform:translateX(23px); }
     <div class="nav-item" id="nav-natal" onclick="navTo('natal')"><span class="icon">🪐</span>Карта</div>
     <div class="nav-item" id="nav-profile" onclick="navTo('profile')"><span class="icon">👤</span>Профиль</div>
     <div class="nav-item" id="nav-settings" onclick="navTo('settings')"><span class="icon">⚙️</span>Настройки</div>
+</div>
+<div id="drawer" class="drawer-overlay" onclick="closeDrawer(event)">
+    <div class="drawer-panel" onclick="event.stopPropagation()">
+        <div class="drawer-title">✨ Меню</div>
+        <div class="drawer-item" onclick="drawerGo('natal')"><span>🪐</span>Натальная карта</div>
+        <div class="drawer-item" onclick="drawerGo('review')"><span>🔮</span>Глубокий разбор</div>
+        <div class="drawer-item" onclick="drawerGo('forecast')"><span>📅</span>Прогноз дня</div>
+        <div class="drawer-item" onclick="drawerGo('tests')"><span>🧠</span>Психологические тесты <em>скоро</em></div>
+        <div class="drawer-item" onclick="drawerGo('research')"><span>🔬</span>Исследования <em>скоро</em></div>
+        <div class="drawer-item" onclick="drawerGo('compat')"><span>💞</span>Совместимость <em>скоро</em></div>
+    </div>
 </div>
 <div id="modal" class="modal-overlay" onclick="closeModal(event)">
     <div class="modal-card" onclick="event.stopPropagation()">
@@ -380,6 +437,7 @@ function calculateInApp(silent) {
     saveProfile(f);
     renderDeepReview(f, lifePath, soul, world, personal, pyCounts, pYear);
     renderExtraNumbers(f, lifePath, soul, pYear, td, tm, ty, bd, bm, by);
+    try { renderNatal(f, bd, bm, by); } catch (err) { console.log(err); }
 
     if (!silent) {
         setTimeout(function () { document.getElementById('dash').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
@@ -812,16 +870,9 @@ function openMonth() {
 }
 
 function openNatal() {
-    if (!window.__calc) { openModal("🪐", "Натальная карта", "Сначала нажми «✨ РАССЧИТАТЬ» — и здесь появится разбор карты и прогнозы."); return; }
-    let c = window.__calc, e = window.__extra || {};
-    let b = '<div class="rv-intro">Натальная карта простыми словами: твой характер, сильные сферы и прогнозы.</div>';
-    b += '<h4>🧬 Кто ты по карте</h4><p>Путь ' + c.lifePath + '. ' + LIFE_PATH_DEEP[c.lifePath] + '</p>';
-    b += '<h4>🪐 Планеты — твои сферы жизни</h4>';
-    for (let k in PLANET_TEXT) { b += '<p><b>' + k + '</b> — ' + PLANET_TEXT[k] + '</p>'; }
-    b += '<h4>🗓️ Прогноз на месяц</h4><p>Личный месяц ' + (e.pMonth || '-') + ': ' + (e.pMonth ? PM_ADVICE[e.pMonth] : '') + '</p>';
-    b += '<h4>📅 Прогноз на год</h4><p>Личный год ' + c.pYear + ': ' + PY_ADVICE[c.pYear] + '</p>';
-    b += '<h4>🌀 Прогноз на цикл</h4><p>Ты в ' + c.pYear + '-м году большого 9-летнего цикла. ' + CYCLE_NOTE[c.pYear] + '</p>';
-    openModal("🪐", "Натальная карта", b);
+    if (!window.__natal) { openModal("🪐", "Натальная карта", "Сначала нажми «✨ РАССЧИТАТЬ» (укажи дату, время и город рождения) — и здесь построится твоя карта неба."); return; }
+    document.getElementById('dash').style.display = 'block';
+    setTimeout(function () { document.getElementById('natalCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
 }
 
 function renderDeepReview(f, lifePath, soul, world, personal, pyCounts, pYear) {
@@ -879,6 +930,250 @@ function renderDeepReview(f, lifePath, soul, world, personal, pyCounts, pYear) {
     document.getElementById('reviewBody').innerHTML = h;
 }
 
+// ===================== ГОРОДА + АВТОПОДСКАЗКИ =====================
+const CITIES = [
+["Москва",55.7558,37.6173,3],["Санкт-Петербург",59.9343,30.3351,3],["Новосибирск",55.0084,82.9357,7],
+["Екатеринбург",56.8389,60.6057,5],["Казань",55.7963,49.1088,3],["Нижний Новгород",56.2965,43.9361,3],
+["Челябинск",55.1644,61.4368,5],["Самара",53.1959,50.1002,4],["Омск",54.9885,73.3242,6],
+["Ростов-на-Дону",47.2357,39.7015,3],["Уфа",54.7388,55.9721,5],["Красноярск",56.0153,92.8932,7],
+["Пермь",58.0105,56.2502,5],["Воронеж",51.6720,39.1843,3],["Волгоград",48.7080,44.5133,3],
+["Краснодар",45.0355,38.9753,3],["Саратов",51.5331,46.0342,4],["Тюмень",57.1530,65.5343,5],
+["Тольятти",53.5078,49.4204,4],["Ижевск",56.8526,53.2045,4],["Барнаул",53.3548,83.7698,7],
+["Иркутск",52.2870,104.3050,8],["Хабаровск",48.4827,135.0838,10],["Владивосток",43.1198,131.8869,10],
+["Ярославль",57.6261,39.8845,3],["Махачкала",42.9849,47.5047,3],["Томск",56.4846,84.9476,7],
+["Оренбург",51.7682,55.0969,5],["Кемерово",55.3547,86.0873,7],["Калининград",54.7104,20.4522,2],
+["Сочи",43.5855,39.7231,3],["Минск",53.9006,27.5590,3],["Гомель",52.4345,30.9754,3],
+["Могилёв",53.9007,30.3314,3],["Брест",52.0976,23.7341,3],["Витебск",55.1904,30.2049,3],
+["Киев",50.4501,30.5234,2],["Харьков",49.9935,36.2304,2],["Одесса",46.4825,30.7233,2],
+["Днепр",48.4647,35.0462,2],["Львов",49.8397,24.0297,2],["Алматы",43.2220,76.8512,6],
+["Астана",51.1694,71.4491,6],["Шымкент",42.3174,69.5901,5],["Ташкент",41.2995,69.2401,5],
+["Самарканд",39.6270,66.9750,5],["Бишкек",42.8746,74.5698,6],["Душанбе",38.5598,68.7870,5],
+["Баку",40.4093,49.8671,4],["Ереван",40.1792,44.4991,4],["Тбилиси",41.7151,44.8271,4],
+["Кишинёв",47.0105,28.8638,2],["Лондон",51.5074,-0.1278,0],["Париж",48.8566,2.3522,1],
+["Берлин",52.5200,13.4050,1],["Рим",41.9028,12.4964,1],["Мадрид",40.4168,-3.7038,1],
+["Стамбул",41.0082,28.9784,3],["Дубай",25.2048,55.2708,4],["Нью-Йорк",40.7128,-74.0060,-5],
+["Лос-Анджелес",34.0522,-118.2437,-8],["Пекин",39.9042,116.4074,8],["Токио",35.6762,139.6503,9]
+];
+let __cityPick = {};
+function resolveCity(fieldId) {
+    if (__cityPick[fieldId]) return __cityPick[fieldId];
+    let val = (document.getElementById(fieldId).value || '').trim().toLowerCase();
+    if (!val) return null;
+    for (let c of CITIES) { if (c[0].toLowerCase() === val) return { lat: c[1], lon: c[2], tz: c[3], name: c[0] }; }
+    for (let c of CITIES) { if (c[0].toLowerCase().indexOf(val) === 0) return { lat: c[1], lon: c[2], tz: c[3], name: c[0] }; }
+    return null;
+}
+function initAutocomplete() {
+    ['birthCity', 'currentCity'].forEach(function (id) {
+        let input = document.getElementById(id);
+        let list = document.getElementById('ac-' + id);
+        if (!input || !list) return;
+        input.addEventListener('input', function () {
+            __cityPick[id] = null;
+            let v = input.value.trim().toLowerCase();
+            if (v.length < 1) { list.classList.remove('open'); return; }
+            let matches = CITIES.filter(function (c) { return c[0].toLowerCase().indexOf(v) === 0; });
+            if (!matches.length) matches = CITIES.filter(function (c) { return c[0].toLowerCase().indexOf(v) >= 0; });
+            matches = matches.slice(0, 8);
+            if (!matches.length) { list.classList.remove('open'); return; }
+            list.innerHTML = matches.map(function (c) {
+                return '<div class="ac-item" data-n="' + c[0] + '" data-lat="' + c[1] + '" data-lon="' + c[2] + '" data-tz="' + c[3] + '">' + c[0] + '<small>UTC' + (c[3] >= 0 ? '+' : '') + c[3] + '</small></div>';
+            }).join('');
+            list.classList.add('open');
+            Array.prototype.forEach.call(list.querySelectorAll('.ac-item'), function (el) {
+                el.addEventListener('click', function () {
+                    input.value = el.getAttribute('data-n');
+                    __cityPick[id] = { lat: parseFloat(el.getAttribute('data-lat')), lon: parseFloat(el.getAttribute('data-lon')), tz: parseFloat(el.getAttribute('data-tz')), name: el.getAttribute('data-n') };
+                    list.classList.remove('open');
+                });
+            });
+        });
+        input.addEventListener('blur', function () { setTimeout(function () { list.classList.remove('open'); }, 200); });
+    });
+}
+
+// ===================== МЕНЮ (бургер) =====================
+function openDrawer() { document.getElementById('drawer').classList.add('open'); }
+function closeDrawer(e) { document.getElementById('drawer').classList.remove('open'); }
+function drawerGo(key) {
+    closeDrawer();
+    setTimeout(function () {
+        if (key === 'natal') { navTo('natal'); }
+        else if (key === 'forecast') { navTo('forecast'); }
+        else if (key === 'review') {
+            if (!window.__calc) { openModal("🔮", "Глубокий разбор", "Сначала нажми «✨ РАССЧИТАТЬ»."); return; }
+            document.getElementById('dash').style.display = 'block';
+            document.getElementById('reviewBody').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        else if (key === 'tests') { openModal("🧠", "Психологические тесты", "Раздел в разработке 🛠️<br><br>Здесь скоро появятся короткие тесты: тип личности, темперамент и ведущая мотивация."); }
+        else if (key === 'research') { openModal("🔬", "Исследования", "Раздел в разработке 🛠️<br><br>Здесь будут разборы: как работают нумерология и астрология и что говорит наука."); }
+        else if (key === 'compat') { openModal("💞", "Совместимость", "Раздел в разработке 🛠️<br><br>Скоро можно будет сравнить двух людей по числам и знакам."); }
+    }, 120);
+}
+
+// ===================== АСТРОНОМИЯ =====================
+function rev(x) { x = x % 360; if (x < 0) x += 360; return x; }
+function sind(x) { return Math.sin(x * Math.PI / 180); }
+function cosd(x) { return Math.cos(x * Math.PI / 180); }
+function tand(x) { return Math.tan(x * Math.PI / 180); }
+function atan2d(y, x) { return Math.atan2(y, x) * 180 / Math.PI; }
+function julianDay(y, m, d, hourUT) {
+    if (m <= 2) { y -= 1; m += 12; }
+    let A = Math.floor(y / 100);
+    let B = 2 - A + Math.floor(A / 4);
+    let JD = Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + B - 1524.5;
+    return JD + hourUT / 24;
+}
+const PLANET_ELEMENTS = {
+    "Луна": { N0: 125.1228, N1: -0.0529538083, i0: 5.1454, i1: 0, w0: 318.0634, w1: 0.1643573223, a0: 60.2666, a1: 0, e0: 0.054900, e1: 0, M0: 115.3654, M1: 13.0649929509, geo: true },
+    "Меркурий": { N0: 48.3313, N1: 3.24587e-5, i0: 7.0047, i1: 5.00e-8, w0: 29.1241, w1: 1.01444e-5, a0: 0.387098, a1: 0, e0: 0.205635, e1: 5.59e-10, M0: 168.6562, M1: 4.0923344368, geo: false },
+    "Венера": { N0: 76.6799, N1: 2.46590e-5, i0: 3.3946, i1: 2.75e-8, w0: 54.8910, w1: 1.38374e-5, a0: 0.723330, a1: 0, e0: 0.006773, e1: -1.302e-9, M0: 48.0052, M1: 1.6021302244, geo: false },
+    "Марс": { N0: 49.5574, N1: 2.11081e-5, i0: 1.8497, i1: -1.78e-8, w0: 286.5016, w1: 2.92961e-5, a0: 1.523688, a1: 0, e0: 0.093405, e1: 2.516e-9, M0: 18.6021, M1: 0.5240207766, geo: false },
+    "Юпитер": { N0: 100.4542, N1: 2.76854e-5, i0: 1.3030, i1: -1.557e-7, w0: 273.8777, w1: 1.64505e-5, a0: 5.20256, a1: 0, e0: 0.048498, e1: 4.469e-9, M0: 19.8950, M1: 0.0830853001, geo: false },
+    "Сатурн": { N0: 113.6634, N1: 2.38980e-5, i0: 2.4886, i1: -1.081e-7, w0: 339.3939, w1: 2.97661e-5, a0: 9.55475, a1: 0, e0: 0.055546, e1: -9.499e-9, M0: 316.9670, M1: 0.0334442282, geo: false },
+    "Уран": { N0: 74.0005, N1: 1.3978e-5, i0: 0.7733, i1: 1.9e-8, w0: 96.6612, w1: 3.0565e-5, a0: 19.18171, a1: -1.55e-8, e0: 0.047318, e1: 7.45e-9, M0: 142.5905, M1: 0.011725806, geo: false },
+    "Нептун": { N0: 131.7806, N1: 3.0173e-5, i0: 1.7700, i1: -2.55e-7, w0: 272.8461, w1: -6.027e-6, a0: 30.05826, a1: 3.313e-8, e0: 0.008606, e1: 2.15e-9, M0: 260.2471, M1: 0.005995147, geo: false }
+};
+function sunData(d) {
+    let w = 282.9404 + 4.70935e-5 * d;
+    let e = 0.016709 - 1.151e-9 * d;
+    let M = rev(356.0470 + 0.9856002585 * d);
+    let E = M + (180 / Math.PI) * e * sind(M) * (1 + e * cosd(M));
+    let xv = cosd(E) - e, yv = Math.sqrt(1 - e * e) * sind(E);
+    let v = atan2d(yv, xv), r = Math.sqrt(xv * xv + yv * yv);
+    let lon = rev(v + w);
+    return { lon: lon, xs: r * cosd(lon), ys: r * sind(lon), Ls: rev(w + M) };
+}
+function planetLon(el, d, sun) {
+    let N = rev(el.N0 + el.N1 * d), i = el.i0 + el.i1 * d, w = rev(el.w0 + el.w1 * d);
+    let a = el.a0 + el.a1 * d, e = el.e0 + el.e1 * d, M = rev(el.M0 + el.M1 * d);
+    let E = M + (180 / Math.PI) * e * sind(M) * (1 + e * cosd(M));
+    for (let k = 0; k < 6; k++) { E = E - (E - (180 / Math.PI) * e * sind(E) - M) / (1 - e * cosd(E)); }
+    let xv = a * (cosd(E) - e), yv = a * Math.sqrt(1 - e * e) * sind(E);
+    let v = atan2d(yv, xv), r = Math.sqrt(xv * xv + yv * yv);
+    let xh = r * (cosd(N) * cosd(v + w) - sind(N) * sind(v + w) * cosd(i));
+    let yh = r * (sind(N) * cosd(v + w) + cosd(N) * sind(v + w) * cosd(i));
+    if (el.geo) { return rev(atan2d(yh, xh)); }
+    return rev(atan2d(yh + sun.ys, xh + sun.xs));
+}
+function plutoLon(d) {
+    let S = 50.03 + 0.033459652 * d;
+    let P = 238.95 + 0.003968789 * d;
+    let lon = 238.9508 + 0.00400703 * d - 19.799 * sind(P) + 19.848 * cosd(P) + 0.897 * sind(2 * P) - 4.956 * cosd(2 * P) + 0.610 * sind(3 * P) + 1.211 * cosd(3 * P) - 0.341 * sind(4 * P) - 0.190 * cosd(4 * P) + 0.128 * sind(5 * P) - 0.034 * cosd(5 * P) - 0.038 * sind(6 * P) + 0.031 * cosd(6 * P) + 0.020 * sind(S - P) - 0.010 * cosd(S - P);
+    return rev(lon);
+}
+function computeChart(by, bm, bd, hh, mm, lat, lon, tz) {
+    let UT = hh + mm / 60 - tz;
+    let JD = julianDay(by, bm, bd, UT);
+    let d = JD - 2451543.5;
+    let sun = sunData(d);
+    let obl = 23.4393 - 3.563e-7 * d;
+    let pos = {};
+    pos["Солнце"] = sun.lon;
+    for (let name in PLANET_ELEMENTS) { pos[name] = planetLon(PLANET_ELEMENTS[name], d, sun); }
+    pos["Плутон"] = plutoLon(d);
+    pos["Сев. узел"] = rev(125.1228 - 0.0529538083 * d);
+    let GMST0h = (sun.Ls / 15) + 12;
+    let LSTh = GMST0h + UT + lon / 15;
+    let RAMC = rev(LSTh * 15);
+    let asc = rev(atan2d(-cosd(RAMC), cosd(obl) * sind(RAMC) + sind(obl) * tand(lat)));
+    let mc = rev(atan2d(sind(RAMC), cosd(RAMC) * cosd(obl)));
+    return { pos: pos, asc: asc, mc: mc };
+}
+
+// ===================== ЗОДИАК + ТОЛКОВАНИЯ =====================
+const SIGNS = ["Овен", "Телец", "Близнецы", "Рак", "Лев", "Дева", "Весы", "Скорпион", "Стрелец", "Козерог", "Водолей", "Рыбы"];
+const SIGN_GLYPH = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
+const SIGN_ELEMENT = ["Огонь", "Земля", "Воздух", "Вода", "Огонь", "Земля", "Воздух", "Вода", "Огонь", "Земля", "Воздух", "Вода"];
+const SIGN_TRAIT = ["напористо, смело и с инициативой", "основательно, чувственно и упрямо", "легко, любопытно и контактно", "чутко, заботливо и эмоционально", "ярко, гордо и творчески", "точно, практично и аналитично", "дипломатично, эстетично и в поиске баланса", "глубоко, страстно и проницательно", "свободно, оптимистично и широко", "дисциплинированно, амбициозно и серьёзно", "оригинально, независимо и по-новаторски", "мечтательно, чутко и сострадательно"];
+const PLANET_GLYPH = { "Солнце": "☉", "Луна": "☽", "Меркурий": "☿", "Венера": "♀", "Марс": "♂", "Юпитер": "♃", "Сатурн": "♄", "Уран": "♅", "Нептун": "♆", "Плутон": "♇", "Сев. узел": "☊" };
+const PLANET_ROLE = { "Солнце": "твоё «я», воля и жизненная сила", "Луна": "эмоции, инстинкты и потребность в заботе", "Меркурий": "ум, речь и стиль мышления", "Венера": "любовь, ценности и чувство красоты", "Марс": "энергия, желания и воля к действию", "Юпитер": "рост, удача и мировоззрение", "Сатурн": "дисциплина, границы и ответственность", "Уран": "свобода, перемены и оригинальность", "Нептун": "мечты, интуиция и духовность", "Плутон": "глубинная трансформация и власть", "Сев. узел": "кармическая задача и путь развития" };
+const HOUSE_THEME = ["личность и характер", "деньги и ценности", "общение и учёба", "дом, семья и корни", "творчество, любовь и дети", "работа, рутина и здоровье", "партнёрство и брак", "кризисы и трансформации", "путешествия и мировоззрение", "карьера, статус и призвание", "друзья и мечты", "подсознание и уединение"];
+const ASPECTS = [{ name: "Соединение", glyph: "☌", angle: 0, orb: 8, txt: "силы сливаются и усиливают друг друга" }, { name: "Секстиль", glyph: "✶", angle: 60, orb: 5, txt: "лёгкая поддержка, способности и возможности" }, { name: "Квадрат", glyph: "□", angle: 90, orb: 6, txt: "напряжение и внутренний конфликт — точка роста" }, { name: "Тригон", glyph: "△", angle: 120, orb: 6, txt: "гармония и природный талант, даётся легко" }, { name: "Оппозиция", glyph: "☍", angle: 180, orb: 7, txt: "полярность и качели — нужен баланс" }];
+function signOf(lon) { return Math.floor(rev(lon) / 30); }
+function degInSign(lon) { return Math.floor(rev(lon) % 30); }
+
+// ===================== КОЛЕСО (SVG) =====================
+function drawWheel(chart) {
+    let cx = 170, cy = 170, rOut = 160, rZod = 132, rIn = 112, rPlanet = 88;
+    function pt(lonDeg, r) {
+        let ang = (180 + (lonDeg - chart.asc)) * Math.PI / 180;
+        return [cx + r * Math.cos(ang), cy - r * Math.sin(ang)];
+    }
+    let svg = '<svg class="natal-wheel" viewBox="0 0 340 340">';
+    svg += '<circle class="ring-c" cx="170" cy="170" r="160"/><circle class="ring-c" cx="170" cy="170" r="132"/><circle class="ring-c" cx="170" cy="170" r="112"/>';
+    for (let s = 0; s < 12; s++) {
+        let p1 = pt(s * 30, rIn), p2 = pt(s * 30, rOut);
+        svg += '<line class="grid-line" x1="' + p1[0].toFixed(1) + '" y1="' + p1[1].toFixed(1) + '" x2="' + p2[0].toFixed(1) + '" y2="' + p2[1].toFixed(1) + '"/>';
+        let mid = pt(s * 30 + 15, rZod);
+        svg += '<text class="sign-glyph" x="' + mid[0].toFixed(1) + '" y="' + (mid[1] + 4).toFixed(1) + '" text-anchor="middle">' + SIGN_GLYPH[s] + '</text>';
+    }
+    let a2 = pt(chart.asc, rOut);
+    svg += '<line class="asc-line" x1="170" y1="170" x2="' + a2[0].toFixed(1) + '" y2="' + a2[1].toFixed(1) + '"/>';
+    let used = [];
+    Object.keys(chart.pos).forEach(function (name) {
+        let lon = chart.pos[name], r = rPlanet;
+        used.forEach(function (u) { let dd = Math.abs(u.lon - lon); if (dd > 180) dd = 360 - dd; if (dd < 8) r -= 17; });
+        used.push({ lon: lon, r: r });
+        let p = pt(lon, r);
+        svg += '<text class="planet-glyph" x="' + p[0].toFixed(1) + '" y="' + (p[1] + 5).toFixed(1) + '" text-anchor="middle">' + (PLANET_GLYPH[name] || '•') + '</text>';
+    });
+    svg += '</svg>';
+    return svg;
+}
+
+// ===================== РЕНДЕР НАТАЛЬНОЙ КАРТЫ =====================
+let __natalTab = 'signs';
+function renderNatal(f, bd, bm, by) {
+    let timeStr = (document.getElementById('birthTime').value || '').trim();
+    let hh = 12, mm = 0, haveTime = false;
+    if (/^\d{2}:\d{2}$/.test(timeStr)) { hh = parseInt(timeStr.slice(0, 2), 10); mm = parseInt(timeStr.slice(3), 10); haveTime = true; }
+    let city = resolveCity('birthCity') || resolveCity('currentCity');
+    let approx = false;
+    if (!city) { city = { lat: 55.75, lon: 37.62, tz: 3, name: 'Москва' }; approx = true; }
+    let chart = computeChart(by, bm, bd, hh, mm, city.lat, city.lon, city.tz);
+    window.__natal = chart;
+    document.getElementById('natalWheel').innerHTML = drawWheel(chart);
+    let sunS = signOf(chart.pos["Солнце"]), moonS = signOf(chart.pos["Луна"]), ascS = signOf(chart.asc);
+    document.getElementById('natalMeta').innerHTML = '<b>☉ Солнце</b> в ' + SIGNS[sunS] + ' · <b>☽ Луна</b> в ' + SIGNS[moonS] + ' · <b>Asc</b> в ' + SIGNS[ascS];
+    let notes = [];
+    if (!haveTime) notes.push('время рождения не указано — взят полдень, Асцендент и дома примерные');
+    if (approx) notes.push('город рождения не распознан — взята Москва; выбери город из подсказок для точности');
+    document.getElementById('natalNote').innerHTML = notes.length ? '⚠️ ' + notes.join('; ') + '.' : 'Дома — по системе равных домов от Асцендента (упрощённо). Часовой пояс — современный стандартный.';
+    natalTab(__natalTab);
+}
+function natalTab(tab) {
+    __natalTab = tab;
+    ['signs', 'houses', 'inhouse', 'aspects'].forEach(function (t) {
+        let el = document.getElementById('ntab-' + t);
+        if (el) el.className = (t === tab) ? 'btn active' : 'btn';
+    });
+    if (!window.__natal) return;
+    let chart = window.__natal, ascSign = signOf(chart.asc), body = '';
+    if (tab === 'signs') {
+        body += '<div class="rv-intro">Где находятся твои планеты по знакам зодиака:</div>';
+        for (let name in chart.pos) { let s = signOf(chart.pos[name]); body += '<p><b>' + (PLANET_GLYPH[name] || '') + ' ' + name + ' в ' + SIGNS[s] + '</b> (' + degInSign(chart.pos[name]) + '°, ' + SIGN_ELEMENT[s] + ') — ' + (PLANET_ROLE[name] || '') + ' проявляется ' + SIGN_TRAIT[s] + '.</p>'; }
+    } else if (tab === 'houses') {
+        body += '<div class="rv-intro">12 домов — это сферы жизни. В каком знаке начинается каждый дом:</div>';
+        for (let h = 0; h < 12; h++) { let s = (ascSign + h) % 12; body += '<p><b>' + (h + 1) + '-й дом — ' + HOUSE_THEME[h] + '</b><br>в знаке ' + SIGNS[s] + ': сфера окрашена качествами «' + SIGN_TRAIT[s] + '».</p>'; }
+    } else if (tab === 'inhouse') {
+        body += '<div class="rv-intro">В каких сферах жизни (домах) проявляются твои планеты:</div>';
+        for (let name in chart.pos) { let h = (signOf(chart.pos[name]) - ascSign + 12) % 12; body += '<p><b>' + (PLANET_GLYPH[name] || '') + ' ' + name + ' в ' + (h + 1) + '-м доме</b> (' + HOUSE_THEME[h] + ') — ' + (PLANET_ROLE[name] || '') + ' реализуется здесь.</p>'; }
+    } else {
+        body += '<div class="rv-intro">Аспекты — углы между планетами, они показывают, как твои силы взаимодействуют:</div>';
+        let names = Object.keys(chart.pos), found = 0;
+        for (let a = 0; a < names.length; a++) {
+            for (let b = a + 1; b < names.length; b++) {
+                let diff = Math.abs(chart.pos[names[a]] - chart.pos[names[b]]); if (diff > 180) diff = 360 - diff;
+                for (let asp of ASPECTS) { if (Math.abs(diff - asp.angle) <= asp.orb) { body += '<p><b>' + asp.glyph + ' ' + asp.name + ': ' + names[a] + ' — ' + names[b] + '</b><br>' + asp.txt + '. Взаимодействуют ' + (PLANET_ROLE[names[a]] || names[a]) + ' и ' + (PLANET_ROLE[names[b]] || names[b]) + '.</p>'; found++; break; } }
+            }
+        }
+        if (!found) body += '<p>Сильных аспектов в пределах орбиса не найдено — планеты расположены относительно независимо.</p>';
+    }
+    document.getElementById('natalBody').innerHTML = body;
+}
+
+initAutocomplete();
 loadProfile();
 </script>
 </body>
