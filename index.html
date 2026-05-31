@@ -123,11 +123,11 @@ input:checked + .slider:before{ transform:translateX(23px); }
 </div>
 <button class="main-btn" onclick="calculateInApp()">✨ РАССЧИТАТЬ</button>
 <div class="send-row">
-    <button class="send-btn" onclick="sendReport('person')">🧑 О человеке — портрет личности</button>
-    <button class="send-btn" onclick="sendReport('planets')">🪐 По планетам — простым языком</button>
-    <button class="send-btn" onclick="sendReport('forecast')">📅 Прогноз на день</button>
+    <button class="send-btn" onclick="showReport('person')">🧑 О человеке — портрет личности</button>
+    <button class="send-btn" onclick="showReport('planets')">🪐 По планетам — простым языком</button>
+    <button class="send-btn" onclick="showReport('forecast')">📅 Прогноз на день</button>
 </div>
-<div class="send-hint">Отчёт придёт в чат с ботом. Открой приложение через кнопку «🚀 ОТКРЫТЬ ПУЛЬТ» в Telegram.</div>
+<div class="send-hint">Нажми — подробный разбор откроется прямо здесь, в приложении.</div>
 <div id="dash">
     <div class="section-title">Биоритмы на выбранный день</div>
     <div class="card">
@@ -167,6 +167,28 @@ input:checked + .slider:before{ transform:translateX(23px); }
         <div class="py-grid" id="pyGrid"></div>
         <div class="tap-hint">Нажми на ячейку, чтобы узнать значение</div>
     </div>
+    <div class="section-title">Личные числа</div>
+    <div class="card">
+        <div class="mini-grid" id="extraRow1"></div>
+        <div class="mini-grid" id="extraRow2" style="margin-top:10px;"></div>
+        <div class="tap-hint">Нажми на число, чтобы узнать значение</div>
+    </div>
+    <div class="section-title">Деньги</div>
+    <div class="card">
+        <div class="day-num">
+            <div class="day-circle" id="moneyCircle" style="background:radial-gradient(circle at 30% 30%, #b6ffcf, #2fce8f); box-shadow:0 0 26px rgba(47,206,143,.5);">—</div>
+            <div class="day-text" id="moneyText"></div>
+        </div>
+        <div class="tap-hint" id="moneyCodeLine" style="margin-top:14px;"></div>
+    </div>
+    <div class="section-title">Личный год и месяц</div>
+    <div class="card">
+        <div class="mini-grid">
+            <div class="mini" onclick="openYear()"><span class="t">Личный год</span><div class="c" id="mYear">—</div></div>
+            <div class="mini" onclick="openMonth()"><span class="t">Личный месяц</span><div class="c" id="mMonth">—</div></div>
+        </div>
+        <div class="tap-hint">Нажми, чтобы узнать, что делать</div>
+    </div>
     <div class="section-title">Глубокий разбор</div>
     <div class="card">
         <div class="ig-title"><span class="icon">🔮</span>Космический разбор личности</div>
@@ -176,6 +198,7 @@ input:checked + .slider:before{ transform:translateX(23px); }
 <div class="bottom-nav">
     <div class="nav-item active" id="nav-home" onclick="navTo('home')"><span class="icon">🏠</span>Дом</div>
     <div class="nav-item" id="nav-forecast" onclick="navTo('forecast')"><span class="icon">📅</span>Прогноз</div>
+    <div class="nav-item" id="nav-natal" onclick="navTo('natal')"><span class="icon">🪐</span>Карта</div>
     <div class="nav-item" id="nav-profile" onclick="navTo('profile')"><span class="icon">👤</span>Профиль</div>
     <div class="nav-item" id="nav-settings" onclick="navTo('settings')"><span class="icon">⚙️</span>Настройки</div>
 </div>
@@ -356,24 +379,37 @@ function calculateInApp(silent) {
     window.__calc = { lifePath: lifePath, soul: soul, world: world, personal: personal, pyCounts: pyCounts, pYear: pYear };
     saveProfile(f);
     renderDeepReview(f, lifePath, soul, world, personal, pyCounts, pYear);
+    renderExtraNumbers(f, lifePath, soul, pYear, td, tm, ty, bd, bm, by);
 
     if (!silent) {
         setTimeout(function () { document.getElementById('dash').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
     }
 }
 
-// Отправка боту -> развёрнутый отчёт придёт в чат. type: person | planets | forecast
-function sendReport(type) {
+// Подробный разбор открывается прямо в приложении. type: person | planets | forecast
+function showReport(type) {
     let f = readForm();
     if (!f) return;
     saveProfile(f);
-    let circadian = document.getElementById('circadianToggle').checked ? "1" : "0";
-    // Формат: type||date_mode||имя||дата||время||город_рожд||город_сейчас||биочасы
-    let payload = [type, selectedDate, f.fullName, f.birthStr, f.birthTime, f.birthCity, f.currentCity, circadian].join("||");
-    if (tg && typeof tg.sendData === 'function') {
-        tg.sendData(payload);
+    if (!window.__calc) calculateInApp(true);
+    let c = window.__calc;
+    if (!c) return;
+    if (type === 'person') {
+        openModal("🧑", "Портрет личности",
+            '<div class="lead">' + f.fullName + '</div>' +
+            '<h4>🛤️ Путь жизни ' + c.lifePath + '</h4><p>' + LIFE_PATH_LONG[c.lifePath] + '</p>' +
+            '<h4>💗 Число души ' + c.soul + '</h4><p>' + SOUL_LONG[c.soul] + '</p>' +
+            '<h4>🌍 Число мира ' + c.world + '</h4><p>' + WORLD[c.world] + '</p>');
+    } else if (type === 'planets') {
+        let b = '<div class="rv-intro">За что отвечают планеты в твоей жизни простым языком:</div>';
+        for (let k in PLANET_TEXT) { b += '<h4>' + k + '</h4><p>' + PLANET_TEXT[k] + '</p>'; }
+        openModal("🪐", "Твои планеты простым языком", b);
     } else {
-        alert("Открой приложение через кнопку «🚀 ОТКРЫТЬ ПУЛЬТ» в Telegram — тогда отчёт придёт в чат.");
+        let p = c.personal, e = window.__extra || {};
+        openModal("📅", "Прогноз на день",
+            '<div class="lead">Число дня: ' + p + '</div><p>' + (INTERPRETATIONS[p] || '') + '</p>' +
+            '<h4>📆 Личный месяц ' + (e.pMonth || '-') + '</h4><p>' + (e.pMonth ? PM_ADVICE[e.pMonth] : '') + '</p>' +
+            '<h4>🗓️ Личный год ' + c.pYear + '</h4><p>' + PY_ADVICE[c.pYear] + '</p>');
     }
 }
 
@@ -509,7 +545,7 @@ function openPy(d) {
 }
 
 function navTo(tab) {
-    ['home', 'forecast', 'profile', 'settings'].forEach(function (t) {
+    ['home', 'forecast', 'natal', 'profile', 'settings'].forEach(function (t) {
         document.getElementById('nav-' + t).className = (t === tab) ? 'nav-item active' : 'nav-item';
     });
     if (tab === 'home') {
@@ -517,10 +553,16 @@ function navTo(tab) {
         return;
     }
     if (tab === 'forecast') {
-        if (!window.__calc) { openModal("📅", "Прогноз", "Сначала нажми «✨ РАССЧИТАТЬ» — и здесь появится прогноз на день."); return; }
-        let p = window.__calc.personal;
-        openModal("📅", "Прогноз на день", '<div class="lead">Число дня: ' + p + '</div>' + (INTERPRETATIONS[p] || '') +
-            '<div class="count">Совет: сверься с биоритмами выше — если они на подъёме (▲), смело берись за важное.</div>');
+        if (!window.__calc) { openModal("📅", "Прогноз", "Сначала нажми «✨ РАССЧИТАТЬ» — и здесь появится прогноз."); return; }
+        let p = window.__calc.personal, e = window.__extra || {};
+        openModal("📅", "Прогноз на день",
+            '<div class="lead">Число дня: ' + p + '</div><p>' + (INTERPRETATIONS[p] || '') + '</p>' +
+            '<h4>📆 Личный месяц ' + (e.pMonth || '-') + '</h4><p>' + (e.pMonth ? PM_ADVICE[e.pMonth] : '') + '</p>' +
+            '<h4>🗓️ Личный год ' + window.__calc.pYear + '</h4><p>' + PY_ADVICE[window.__calc.pYear] + '</p>');
+        return;
+    }
+    if (tab === 'natal') {
+        openNatal();
         return;
     }
     if (tab === 'profile') {
@@ -624,6 +666,163 @@ const KABBALAH = {
     21: "Мир — завершение, целостность, исполнение.",
     22: "Шут — чистый потенциал, свобода, новый старт."
 };
+
+// ===================== РАСШИРЕННАЯ НУМЕРОЛОГИЯ =====================
+const RU_LETTER = { 'а': 1, 'и': 1, 'с': 1, 'ъ': 1, 'б': 2, 'й': 2, 'т': 2, 'ы': 2, 'в': 3, 'к': 3, 'у': 3, 'ь': 3, 'г': 4, 'л': 4, 'ф': 4, 'э': 4, 'д': 5, 'м': 5, 'х': 5, 'ю': 5, 'е': 6, 'н': 6, 'ц': 6, 'я': 6, 'ё': 7, 'о': 7, 'ч': 7, 'ж': 8, 'п': 8, 'ш': 8, 'з': 9, 'р': 9, 'щ': 9 };
+const VOWELS = 'аеёиоуыэюя';
+const ARCHETYPE = {
+    1: "лидерство, волю, независимость и новые начинания.",
+    2: "партнёрство, чуткость, дипломатию и баланс.",
+    3: "творчество, общение, радость и самовыражение.",
+    4: "порядок, труд, надёжность и систему.",
+    5: "свободу, перемены, движение и опыт.",
+    6: "любовь, заботу, дом и ответственность.",
+    7: "анализ, глубину, знания и интуицию.",
+    8: "власть, деньги, масштаб и результат.",
+    9: "мудрость, отдачу, идеалы и завершение."
+};
+const PEAK = {
+    1: "Пик силы — в самостоятельности и лидерстве: твои вершины там, где ты действуешь первым.",
+    2: "Пик силы — в союзах и партнёрстве: успех приходит через людей и сотрудничество.",
+    3: "Пик силы — в творчестве и общении: ты блистаешь, когда открыто выражаешь себя.",
+    4: "Пик силы — в системности и труде: вершины берёшь упорством и порядком.",
+    5: "Пик силы — в переменах и свободе: расцветаешь в движении и новизне.",
+    6: "Пик силы — в заботе и гармонии: реализуешься через семью, любовь и красоту.",
+    7: "Пик силы — в знании и глубине: твои вершины — экспертность и мудрость.",
+    8: "Пик силы — в деньгах и власти: твой пик — крупные дела и материальный результат.",
+    9: "Пик силы — в служении и идеях: масштаб приходит через отдачу и широкий взгляд."
+};
+const MONEY = {
+    1: "Деньги приходят через инициативу и лидерство — создавай своё, не работай «на дядю».",
+    2: "Деньги — через партнёрства, посредничество и умение договариваться.",
+    3: "Деньги — через творчество, коммуникацию и личный бренд.",
+    4: "Деньги — через системность, дисциплину и стабильный труд.",
+    5: "Деньги — через гибкость, продажи, поездки и разные источники дохода.",
+    6: "Деньги — через заботу о людях, сервис, красоту и дом.",
+    7: "Деньги — через экспертизу, знания и узкую специализацию.",
+    8: "Деньги — через управление, масштаб, бизнес и инвестиции. Это твоя сильная зона.",
+    9: "Деньги — через большие проекты, помощь людям и идейные миссии."
+};
+const PY_ADVICE = {
+    1: "Начинай новое, ставь цели на 9 лет вперёд, проявляй инициативу. Не бойся быть первым.",
+    2: "Не торопи события: выстраивай отношения, договаривайся, копи ресурсы и будь терпелив.",
+    3: "Заявляй о себе, твори, общайся, расширяй круг. Удача любит активность и оптимизм.",
+    4: "Наводи порядок, строй фундамент, работай системно. Дисциплина сейчас окупится.",
+    5: "Будь гибким, пробуй новое, путешествуй. Не цепляйся за жёсткие планы.",
+    6: "Вкладывайся в семью, дом и отношения, бери ответственность, создавай уют.",
+    7: "Учись, анализируй, уходи в глубину и восстанавливайся. Меньше суеты, больше смысла.",
+    8: "Действуй масштабно: карьера, деньги, крупные решения. Собирай посеянное.",
+    9: "Завершай старое, отпускай лишнее, подводи итоги. Освобождай место новому циклу."
+};
+const PM_ADVICE = {
+    1: "Месяц старта: запускай дела, бери инициативу, действуй решительно.",
+    2: "Месяц партнёрства: налаживай связи, будь терпелив, действуй мягко.",
+    3: "Месяц творчества и общения: проявляйся, выступай, заявляй о себе.",
+    4: "Месяц труда и порядка: разбирай дела, наводи систему, не ленись.",
+    5: "Месяц перемен: будь гибким, лови возможности, пробуй новое.",
+    6: "Месяц дома и заботы: уделяй время близким и быту, гармонизируй пространство.",
+    7: "Месяц анализа: учись, планируй, восстанавливайся, побудь в тишине.",
+    8: "Месяц результатов: фокус на деньгах, делах и важных решениях.",
+    9: "Месяц завершений: закрывай хвосты, отпускай, очищай пространство."
+};
+const CYCLE_NOTE = {
+    1: "Начало нового витка — закладывай фундамент будущего десятилетия.",
+    2: "Ранняя стадия цикла — развивай начатое и набирай союзников.",
+    3: "Цикл набирает силу — время роста, проявленности и новых связей.",
+    4: "Середина пути — укрепляй и систематизируй достигнутое.",
+    5: "Поворотная фаза — перемены и корректировка курса.",
+    6: "Зрелость цикла — гармонизируй и бери ответственность за созданное.",
+    7: "Углубление — переосмысление и подготовка к завершению.",
+    8: "Кульминация — сбор главного урожая цикла.",
+    9: "Финал витка — отпускай старое и готовься к новому старту."
+};
+const PLANET_TEXT = {
+    "Солнце": "ядро личности, воля и жизненная сила — то, как ты светишь миру.",
+    "Луна": "эмоции, инстинкты и потребность в безопасности и заботе.",
+    "Меркурий": "ум, речь, логика и то, как ты общаешься и учишься.",
+    "Венера": "любовь, деньги, ценности и чувство красоты.",
+    "Марс": "энергия, воля к действию, страсть и умение бороться.",
+    "Юпитер": "рост, удача, мировоззрение и масштаб мышления.",
+    "Сатурн": "дисциплина, границы, ответственность и зрелость."
+};
+const EXTRA_META = {
+    name: { emoji: '🔤', title: 'Число имени', ctx: 'Как звучит твоё имя в повседневности и какое первое впечатление ты создаёшь.' },
+    character: { emoji: '🎭', title: 'Число характера', ctx: 'Твой внутренний характер и то, что движет тобой изнутри (по гласным имени).' },
+    personality: { emoji: '🎩', title: 'Число личности', ctx: 'Каким тебя видят окружающие — твоя внешняя «обложка» (по согласным имени).' },
+    realization: { emoji: '🚀', title: 'Число реализации', ctx: 'Как ты раскрываешь потенциал и реализуешь себя в мире (по всему имени).' },
+    peak: { emoji: '⛰️', title: 'Число пика', ctx: '' },
+    challenge: { emoji: '⚔️', title: 'Число вызова (испытания)', ctx: '' }
+};
+
+function nameNumbers(fullName) {
+    let s = (fullName || '').toLowerCase();
+    let all = 0, vow = 0, cons = 0, first = 0;
+    let firstName = s.split(' ')[0] || '';
+    for (let ch of s) {
+        let v = RU_LETTER[ch] || 0;
+        if (!v) continue;
+        all += v;
+        if (VOWELS.indexOf(ch) >= 0) vow += v; else cons += v;
+    }
+    for (let ch of firstName) { first += (RU_LETTER[ch] || 0); }
+    return { realization: digRoot(all), character: digRoot(vow), personality: digRoot(cons), name: digRoot(first) };
+}
+
+function renderExtraNumbers(f, lifePath, soul, pYear, td, tm, ty, bd, bm, by) {
+    let nn = nameNumbers(f.fullName);
+    let peak = digRoot(digRoot(bd) + digRoot(bm));
+    let challenge = Math.abs(digRoot(bd) - digRoot(bm));
+    let money = digRoot(lifePath + nn.realization);
+    let pMonth = digRoot(pYear + tm);
+    let codeStr = '' + lifePath + nn.realization + money;
+    window.__extra = { name: nn.name, character: nn.character, personality: nn.personality, realization: nn.realization, peak: peak, challenge: challenge, money: money, pMonth: pMonth, pYear: pYear, codeStr: codeStr };
+    let e = window.__extra;
+    function cell(key, label, val) {
+        return '<div class="mini" onclick="openExtra(\'' + key + '\')"><span class="t">' + label + '</span><div class="c">' + val + '</div></div>';
+    }
+    document.getElementById('extraRow1').innerHTML = cell('name', 'Имя', e.name) + cell('character', 'Характер', e.character) + cell('personality', 'Личность', e.personality);
+    document.getElementById('extraRow2').innerHTML = cell('realization', 'Реализация', e.realization) + cell('peak', 'Пик', e.peak) + cell('challenge', 'Вызов', e.challenge);
+    document.getElementById('moneyCircle').innerText = money;
+    document.getElementById('moneyText').innerText = MONEY[money];
+    document.getElementById('moneyCodeLine').innerHTML = 'Твой код денег: <b>' + codeStr + '</b> — личная комбинация-талисман (можно использовать как подсказку для PIN или финансовой цели).';
+    document.getElementById('mYear').innerText = pYear;
+    document.getElementById('mMonth').innerText = pMonth;
+}
+
+function openExtra(key) {
+    if (!window.__extra) { alert("Сначала нажми «✨ РАССЧИТАТЬ»"); return; }
+    let e = window.__extra, v = e[key], m = EXTRA_META[key];
+    let body = '<div class="lead">Число ' + v + '</div>';
+    if (key === 'peak') { body += '<p>' + PEAK[v] + '</p>'; }
+    else if (key === 'challenge') { body += '<p>' + CHALLENGE[v] + '</p>'; }
+    else { body += '<p>' + m.ctx + '</p><h4>Значение числа ' + v + '</h4><p>Это про ' + ARCHETYPE[v] + '</p>'; }
+    openModal(m.emoji, m.title + ': ' + v, body);
+}
+
+function openYear() {
+    if (!window.__calc) { alert("Сначала нажми «✨ РАССЧИТАТЬ»"); return; }
+    let v = window.__calc.pYear;
+    openModal("🗓️", "Личный год: " + v, '<div class="lead">' + PERSONAL_YEAR[v] + '</div><h4>Что делать</h4><p>' + PY_ADVICE[v] + '</p>');
+}
+
+function openMonth() {
+    if (!window.__extra) { alert("Сначала нажми «✨ РАССЧИТАТЬ»"); return; }
+    let v = window.__extra.pMonth;
+    openModal("📆", "Личный месяц: " + v, '<div class="lead">Энергия месяца — число ' + v + '</div><h4>Что делать</h4><p>' + PM_ADVICE[v] + '</p>');
+}
+
+function openNatal() {
+    if (!window.__calc) { openModal("🪐", "Натальная карта", "Сначала нажми «✨ РАССЧИТАТЬ» — и здесь появится разбор карты и прогнозы."); return; }
+    let c = window.__calc, e = window.__extra || {};
+    let b = '<div class="rv-intro">Натальная карта простыми словами: твой характер, сильные сферы и прогнозы.</div>';
+    b += '<h4>🧬 Кто ты по карте</h4><p>Путь ' + c.lifePath + '. ' + LIFE_PATH_DEEP[c.lifePath] + '</p>';
+    b += '<h4>🪐 Планеты — твои сферы жизни</h4>';
+    for (let k in PLANET_TEXT) { b += '<p><b>' + k + '</b> — ' + PLANET_TEXT[k] + '</p>'; }
+    b += '<h4>🗓️ Прогноз на месяц</h4><p>Личный месяц ' + (e.pMonth || '-') + ': ' + (e.pMonth ? PM_ADVICE[e.pMonth] : '') + '</p>';
+    b += '<h4>📅 Прогноз на год</h4><p>Личный год ' + c.pYear + ': ' + PY_ADVICE[c.pYear] + '</p>';
+    b += '<h4>🌀 Прогноз на цикл</h4><p>Ты в ' + c.pYear + '-м году большого 9-летнего цикла. ' + CYCLE_NOTE[c.pYear] + '</p>';
+    openModal("🪐", "Натальная карта", b);
+}
 
 function renderDeepReview(f, lifePath, soul, world, personal, pyCounts, pYear) {
     let name = f.fullName;
