@@ -270,6 +270,19 @@ input:checked + .slider:before{ transform:translateX(23px); }
     <div class="page-head"><button class="page-back" onclick="closePage('numerologyView')">‹ Назад</button><div class="page-title">🔢 Нумерология</div></div>
     <div id="numerologyBody"></div>
 </div>
+<div id="compatView" class="page-overlay">
+    <div class="page-head"><button class="page-back" onclick="closePage('compatView')">‹ Назад</button><div class="page-title">💞 Совместимость</div></div>
+    <div class="card">
+        <div class="ig-title"><span class="icon">💞</span>Двое в паре</div>
+        <div class="rv-intro">Введите даты рождения двух людей — посчитаем совместимость по числам судьбы и знакам зодиака.</div>
+        <input type="text" id="compatNameA" class="input-field" placeholder="Имя первого (необязательно)">
+        <input type="text" id="compatDateA" class="input-field" placeholder="ДД/ММ/ГГГГ — первый" maxlength="10" inputmode="numeric">
+        <input type="text" id="compatNameB" class="input-field" placeholder="Имя второго (необязательно)">
+        <input type="text" id="compatDateB" class="input-field" placeholder="ДД/ММ/ГГГГ — второй" maxlength="10" inputmode="numeric">
+        <button class="main-btn" onclick="computeCompat()">💞 РАССЧИТАТЬ СОВМЕСТИМОСТЬ</button>
+        <div id="compatBody" class="review" style="margin-top:16px;"></div>
+    </div>
+</div>
 <div id="drawer" class="drawer-overlay" onclick="closeDrawer(event)">
     <div class="drawer-panel" onclick="event.stopPropagation()">
         <div class="drawer-title">✨ Меню</div>
@@ -278,9 +291,10 @@ input:checked + .slider:before{ transform:translateX(23px); }
         <div class="drawer-item" onclick="drawerGo('numerology')"><span>🔢</span>Нумерология</div>
         <div class="drawer-item" onclick="drawerGo('review')"><span>🔮</span>Глубокий разбор</div>
         <div class="drawer-item" onclick="drawerGo('forecast')"><span>📅</span>Прогноз дня</div>
+        <div class="drawer-item" onclick="openMoon()"><span>🌙</span>Лунный календарь</div>
+        <div class="drawer-item" onclick="openCompat()"><span>💞</span>Совместимость</div>
         <div class="drawer-item" onclick="drawerGo('tests')"><span>🧠</span>Психологические тесты <em>скоро</em></div>
         <div class="drawer-item" onclick="drawerGo('research')"><span>🔬</span>Исследования <em>скоро</em></div>
-        <div class="drawer-item" onclick="drawerGo('compat')"><span>💞</span>Совместимость <em>скоро</em></div>
     </div>
 </div>
 <div id="modal" class="modal-overlay" onclick="closeModal(event)">
@@ -296,13 +310,26 @@ let tg = window.Telegram.WebApp;
 tg.expand();
 try { tg.setHeaderColor('#070b18'); tg.setBackgroundColor('#070b18'); } catch (e) {}
 
-// Анимированное звёздное небо
+// Анимированное звёздное небо + падающие звёзды
 (function () {
     const c = document.getElementById('stars'), x = c.getContext('2d');
-    let w, h, stars;
+    let w, h, stars, shooting;
     function init() {
         w = c.width = window.innerWidth; h = c.height = window.innerHeight;
         stars = Array.from({ length: 90 }, () => ({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.4 + 0.3, a: Math.random(), s: Math.random() * 0.02 + 0.004 }));
+        shooting = [];
+    }
+    function spawnShooting() {
+        // запускаем падающую звезду из верхней части экрана
+        let startX = Math.random() * w * 0.8 + w * 0.1;
+        let startY = Math.random() * h * 0.35;
+        let speed = Math.random() * 6 + 7;
+        let angle = Math.PI / 4 + (Math.random() * 0.3 - 0.15); // ~45° вниз-вправо
+        shooting.push({
+            x: startX, y: startY,
+            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+            len: Math.random() * 70 + 90, life: 1
+        });
     }
     function loop() {
         x.clearRect(0, 0, w, h);
@@ -310,9 +337,30 @@ try { tg.setHeaderColor('#070b18'); tg.setBackgroundColor('#070b18'); } catch (e
             st.a += st.s; let o = 0.4 + 0.6 * Math.abs(Math.sin(st.a));
             x.beginPath(); x.arc(st.x, st.y, st.r, 0, 7); x.fillStyle = "rgba(255,255,255," + o + ")"; x.fill();
         }
+        for (let i = shooting.length - 1; i >= 0; i--) {
+            let sh = shooting[i];
+            sh.x += sh.vx; sh.y += sh.vy; sh.life -= 0.012;
+            let norm = Math.hypot(sh.vx, sh.vy) || 1;
+            let tailX = sh.x - sh.vx / norm * sh.len;
+            let tailY = sh.y - sh.vy / norm * sh.len;
+            let grad = x.createLinearGradient(sh.x, sh.y, tailX, tailY);
+            let op = Math.max(sh.life, 0);
+            grad.addColorStop(0, "rgba(255,255,255," + op + ")");
+            grad.addColorStop(0.4, "rgba(205,180,255," + (op * 0.6) + ")");
+            grad.addColorStop(1, "rgba(255,255,255,0)");
+            x.strokeStyle = grad; x.lineWidth = 2; x.lineCap = "round";
+            x.beginPath(); x.moveTo(sh.x, sh.y); x.lineTo(tailX, tailY); x.stroke();
+            x.beginPath(); x.arc(sh.x, sh.y, 1.7, 0, 7); x.fillStyle = "rgba(255,255,255," + op + ")"; x.fill();
+            if (sh.life <= 0 || sh.x > w + 120 || sh.y > h + 120) shooting.splice(i, 1);
+        }
         requestAnimationFrame(loop);
     }
-    init(); loop(); window.addEventListener('resize', init);
+    function tick() {
+        // время от времени запускаем падающую звезду
+        if (shooting.length < 3 && Math.random() < 0.85) spawnShooting();
+        setTimeout(tick, Math.random() * 2400 + 1400);
+    }
+    init(); loop(); setTimeout(tick, 1200); window.addEventListener('resize', init);
 })();
 
 let selectedDate = 'today';
@@ -650,6 +698,109 @@ function openPy(d) {
     openModal("🔲", info.name + " (цифра " + d + ")",
         '<div class="lead">' + info.name + '</div>' + info.desc +
         '<div class="count">' + countMeaning(cnt) + '</div>');
+}
+
+// ===================== ЛУННЫЙ КАЛЕНДАРЬ =====================
+const MOON_PHASES = [
+    { e: "🌑", n: "Новолуние", a: "Время намерений и новых начинаний — загадывай цели и планируй." },
+    { e: "🌒", n: "Растущий месяц", a: "Пора действовать и начинать дела — энергия идёт в рост." },
+    { e: "🌓", n: "Первая четверть", a: "Преодолевай препятствия и не отступай от задуманного." },
+    { e: "🌔", n: "Растущая Луна", a: "Набирай обороты, вкладывайся в развитие и обучение." },
+    { e: "🌕", n: "Полнолуние", a: "Пик энергии и эмоций — завершай важное, но избегай ссор." },
+    { e: "🌖", n: "Убывающая Луна", a: "Время делиться, благодарить и пожинать плоды." },
+    { e: "🌗", n: "Последняя четверть", a: "Отпускай лишнее, наводи порядок и прощай." },
+    { e: "🌘", n: "Старая Луна", a: "Отдых, очищение и подготовка к новому циклу." }
+];
+function moonPhase(date) {
+    const synodic = 2551443; // секунд в лунном месяце
+    const known = Date.UTC(1970, 0, 7, 20, 35, 0) / 1000; // известное новолуние
+    let now = date.getTime() / 1000;
+    let phase = ((now - known) % synodic) / synodic;
+    if (phase < 0) phase += 1;
+    let idx = Math.floor(phase * 8 + 0.5) % 8;
+    let illum = Math.round((1 - Math.cos(phase * 2 * Math.PI)) / 2 * 100);
+    return { idx: idx, illum: illum };
+}
+function closeMenus() {
+    let dr = document.getElementById('drawer');
+    if (dr) dr.classList.remove('open');
+}
+function openMoon() {
+    closeMenus();
+    let d = new Date();
+    if (selectedDate === 'tomorrow') d.setDate(d.getDate() + 1);
+    let mp = moonPhase(d);
+    let info = MOON_PHASES[mp.idx];
+    openModal(info.e, "Лунный календарь",
+        '<div class="lead">' + info.n + '</div>' +
+        '<p>Освещённость: <b>' + mp.illum + '%</b></p>' +
+        '<h4>💫 Что делать</h4><p>' + info.a + '</p>');
+}
+
+// ===================== СОВМЕСТИМОСТЬ =====================
+const ELEMENTS = { fire: "Огонь", earth: "Земля", air: "Воздух", water: "Вода" };
+function zodiac(day, month) {
+    const last = [19, 18, 20, 19, 20, 20, 22, 22, 22, 22, 21, 21];
+    const names = ["Козерог", "Водолей", "Рыбы", "Овен", "Телец", "Близнецы", "Рак", "Лев", "Дева", "Весы", "Скорпион", "Стрелец", "Козерог"];
+    const els = ["earth", "air", "water", "fire", "earth", "air", "water", "fire", "earth", "air", "water", "fire", "earth"];
+    const emo = ["♑", "♒", "♓", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑"];
+    let idx = (day > last[month - 1]) ? month : month - 1;
+    return { name: names[idx], el: els[idx], emoji: emo[idx] };
+}
+const NUM_COMPAT = {
+    1: [1, 2, 3, 5, 9], 2: [1, 2, 4, 6, 8], 3: [1, 3, 5, 6, 9],
+    4: [2, 4, 6, 7, 8], 5: [1, 3, 5, 7, 9], 6: [2, 3, 6, 8, 9],
+    7: [4, 5, 7, 9], 8: [2, 4, 6, 8], 9: [1, 3, 5, 6, 9]
+};
+function elementScore(a, b) {
+    if (a === b) return { s: 42, t: "одна стихия — вы понимаете друг друга с полуслова." };
+    const high = { fire: "air", air: "fire", earth: "water", water: "earth" };
+    if (high[a] === b) return { s: 45, t: "ваши стихии питают друг друга — отличный союз." };
+    const ok = { fire: "earth", earth: "fire", air: "water", water: "air" };
+    if (ok[a] === b) return { s: 28, t: "стихии разные, но вместе вы уравновешиваетесь." };
+    return { s: 18, t: "стихии контрастные — вас тянет друг к другу, но нужна работа." };
+}
+function parseDMY(str) {
+    let p = str.split('/');
+    let d = parseInt(p[0], 10), m = parseInt(p[1], 10), y = parseInt(p[2], 10);
+    if (!d || !m || !y || str.length < 10) return null;
+    return { d: d, m: m, y: y };
+}
+function openCompat() {
+    closeMenus();
+    document.getElementById('compatView').classList.add('open');
+    if (!window.__compatMasks) {
+        mask(document.getElementById('compatDateA'), '__/__/____');
+        mask(document.getElementById('compatDateB'), '__/__/____');
+        window.__compatMasks = true;
+    }
+}
+function computeCompat() {
+    let a = parseDMY(document.getElementById('compatDateA').value.trim());
+    let b = parseDMY(document.getElementById('compatDateB').value.trim());
+    if (!a || !b) { alert("Введите обе даты в формате ДД/ММ/ГГГГ"); return; }
+    let nameA = document.getElementById('compatNameA').value.trim() || "Первый";
+    let nameB = document.getElementById('compatNameB').value.trim() || "Второй";
+    let lpA = digRoot(a.d + a.m + a.y);
+    let lpB = digRoot(b.d + b.m + b.y);
+    let zA = zodiac(a.d, a.m);
+    let zB = zodiac(b.d, b.m);
+    let numGood = (lpA === lpB) ? { s: 48, t: "одинаковые числа судьбы — общие ценности и взгляд на жизнь." }
+        : (NUM_COMPAT[lpA] && NUM_COMPAT[lpA].indexOf(lpB) !== -1) ? { s: 42, t: "числа судьбы в гармонии — вы дополняете друг друга." }
+            : { s: 24, t: "числа судьбы разные — будет чему поучиться друг у друга." };
+    let el = elementScore(zA.el, zB.el);
+    let score = Math.min(98, numGood.s + el.s);
+    let verdict = score >= 80 ? "💖 Прекрасная пара — между вами сильная связь!"
+        : score >= 60 ? "💛 Хороший союз — есть на чём строить отношения."
+            : "🤍 Непростая, но интересная пара — гармония придёт через принятие различий.";
+    let out = '<div class="verdict" style="text-align:center; font-size:18px;">Совместимость: <b>' + score + '%</b></div>'
+        + '<h4>🔢 Числа судьбы</h4>'
+        + '<p>' + nameA + ': <b>' + lpA + '</b> · ' + nameB + ': <b>' + lpB + '</b><br>' + numGood.t + '</p>'
+        + '<h4>♈ Знаки зодиака</h4>'
+        + '<p>' + nameA + ': <b>' + zA.emoji + ' ' + zA.name + '</b> (' + ELEMENTS[zA.el] + ') · '
+        + nameB + ': <b>' + zB.emoji + ' ' + zB.name + '</b> (' + ELEMENTS[zB.el] + ')<br>' + el.t + '</p>'
+        + '<div class="verdict">' + verdict + '</div>';
+    document.getElementById('compatBody').innerHTML = out;
 }
 
 function navTo(tab) {
